@@ -201,21 +201,40 @@ model Conversation {
 }
 
 model ConversationMessage {
-  id             String   @id @default(cuid())
-  tenantId       String
-  conversationId String
-  role           String // ai | customer | system
-  body           String
-  kind           String  @default("text") // text | payment_request | payment_confirmed | opt_out | escalation
-  amount         Float?
-  metadata       String? // JSON
-  createdAt      DateTime @default(now())
+  id                String   @id @default(cuid())
+  tenantId          String
+  conversationId    String
+  role              String // ai | customer | system
+  body              String
+  kind              String  @default("text") // text | payment_request | payment_confirmed | opt_out | escalation
+  amount            Float?
+  metadata          String? // JSON
+  providerMessageId String? // ID from Evolution/Mock adapter (outbound only)
+  deliveryStatus    String  @default("sent") // sent | delivered | read | failed | queued
+  createdAt         DateTime @default(now())
 
   tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([conversationId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Webhook events (audit + idempotency)
+// ─────────────────────────────────────────────────────────────
+
+model WebhookEvent {
+  id              String    @id @default(cuid())
+  provider        String    // evolution | mock
+  providerEventId String    @unique
+  tenantId        String?
+  raw             String    // JSON-serialized payload
+  processedAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([providerEventId])
 }
 
 // ─────────────────────────────────────────────────────────────

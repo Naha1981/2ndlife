@@ -119,7 +119,7 @@ async function main() {
     console.log(`  ✓ Customer: ${created.firstName} ${created.lastName} (${created.id})`);
 
     // Create a recovery opportunity for each customer
-    await db.recoveryOpportunity.create({
+    const opp = await db.recoveryOpportunity.create({
       data: {
         tenantId: tenant.id,
         customerId: created.id,
@@ -131,6 +131,54 @@ async function main() {
           "Present approved restart offer. Empathetic tone; escalate after 2 objections.",
       },
     });
+
+    // For Thabo, create an active conversation with messages
+    if (created.externalId === "cus_8412") {
+      const conv = await db.conversation.create({
+        data: {
+          tenantId: tenant.id,
+          customerId: created.id,
+          opportunityId: opp.id,
+          channel: "whatsapp",
+          status: "engaged",
+          intent: "restart · price-sensitive",
+        },
+      });
+
+      await db.conversationMessage.createMany({
+        data: [
+          {
+            tenantId: tenant.id,
+            conversationId: conv.id,
+            role: "ai",
+            body: "Hi Thabo, your cover lapsed in Jan. You don't owe arrears. Want to restart for R150/mo?",
+            kind: "text",
+          },
+          {
+            tenantId: tenant.id,
+            conversationId: conv.id,
+            role: "customer",
+            body: "I stopped because it was too expensive.",
+            kind: "text",
+          },
+          {
+            tenantId: tenant.id,
+            conversationId: conv.id,
+            role: "ai",
+            body: "I understand. We may be able to look at a lower-cost option. Would you like me to check what is available?",
+            kind: "text",
+          },
+          {
+            tenantId: tenant.id,
+            conversationId: conv.id,
+            role: "customer",
+            body: "Yes, let's do it!",
+            kind: "text",
+          },
+        ],
+      });
+      console.log(`  ✓ Conversation seeded for Thabo (${conv.id})`);
+    }
   }
 
   // 5. Create a second tenant for isolation testing
@@ -152,6 +200,67 @@ async function main() {
     },
   });
   console.log(`✓ Tenant B: ${tenantB.name} (for isolation testing)`);
+
+  // 6. Ensure Thabo has an active conversation with messages
+  const thabo = await db.customer.findFirst({
+    where: { tenantId: tenant.id, externalId: "cus_8412" },
+    include: { contacts: true },
+  });
+  if (thabo) {
+    const existingConv = await db.conversation.findFirst({
+      where: { tenantId: tenant.id, customerId: thabo.id },
+    });
+    if (!existingConv) {
+      const opp = await db.recoveryOpportunity.findFirst({
+        where: { tenantId: tenant.id, customerId: thabo.id },
+      });
+      const conv = await db.conversation.create({
+        data: {
+          tenantId: tenant.id,
+          customerId: thabo.id,
+          opportunityId: opp?.id,
+          channel: "whatsapp",
+          status: "engaged",
+          intent: "restart · price-sensitive",
+        },
+      });
+      await db.conversationMessage.createMany({
+        data: [
+          {
+            tenantId: tenant.id,
+            conversationId: conv.id,
+            role: "ai",
+            body: "Hi Thabo, your cover lapsed in Jan. You don't owe arrears. Want to restart for R150/mo?",
+            kind: "text",
+          },
+          {
+            tenantId: tenant.id,
+            conversationId: conv.id,
+            role: "customer",
+            body: "I stopped because it was too expensive.",
+            kind: "text",
+          },
+          {
+            tenantId: tenant.id,
+            conversationId: conv.id,
+            role: "ai",
+            body: "I understand. We may be able to look at a lower-cost option. Would you like me to check what is available?",
+            kind: "text",
+          },
+          {
+            tenantId: tenant.id,
+            conversationId: conv.id,
+            role: "customer",
+            body: "Yes, let's do it!",
+            kind: "text",
+          },
+        ],
+      });
+      console.log(`✓ Conversation seeded for Thabo (${conv.id})`);
+    } else {
+      console.log(`  ↻ Conversation exists for Thabo`);
+    }
+  }
 
   console.log("\n✅ Seed complete. Demo data ready.");
   console.log("   Tenant ID: demo-tenant");

@@ -185,7 +185,159 @@ export function ConversationsView() {
           </Card>
         </div>
       </div>
+
+      {/* Demo WhatsApp panel — mock mode only */}
+      <DemoWhatsAppPanel customerName={active.customerName} customerPhone="+27721234567" />
     </div>
+  );
+}
+
+/* ─────────── Demo WhatsApp Panel ─────────── */
+
+function DemoWhatsAppPanel({
+  customerName,
+  customerPhone,
+}: {
+  customerName: string;
+  customerPhone: string;
+}) {
+  const [phone, setPhone] = useState(customerPhone);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [log, setLog] = useState<
+    Array<{ direction: "inbound" | "outbound" | "system"; body: string; time: string }>
+  >([]);
+
+  async function send() {
+    if (!text.trim() || !phone.trim() || sending) return;
+    setSending(true);
+    const payload = {
+      providerEventId: `demo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      from: phone,
+      text: text.trim(),
+    };
+
+    setLog((prev) => [
+      ...prev,
+      { direction: "inbound", body: text.trim(), time: new Date().toLocaleTimeString("en-ZA") },
+    ]);
+
+    try {
+      const res = await fetch("/api/webhooks/evolution", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(process.env.NEXT_PUBLIC_WEBHOOK_SECRET
+            ? { "x-webhook-secret": process.env.NEXT_PUBLIC_WEBHOOK_SECRET }
+            : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (data.duplicate) {
+        setLog((prev) => [
+          ...prev,
+          { direction: "system", body: "⚠ Duplicate webhook — ignored (idempotency)", time: new Date().toLocaleTimeString("en-ZA") },
+        ]);
+      } else if (data.ignored) {
+        setLog((prev) => [
+          ...prev,
+          { direction: "system", body: `Ignored: ${data.reason}`, time: new Date().toLocaleTimeString("en-ZA") },
+        ]);
+      } else if (data.ok) {
+        setLog((prev) => [
+          ...prev,
+          { direction: "system", body: "✓ Webhook processed — AI reply sent via MockAdapter (check console)", time: new Date().toLocaleTimeString("en-ZA") },
+        ]);
+        toast.success("WhatsApp message processed", {
+          description: "Inbound → agent → outbound. Check console for [mock-whatsapp] log.",
+        });
+      }
+    } catch (err) {
+      setLog((prev) => [
+        ...prev,
+        { direction: "system", body: `✗ Error: ${err instanceof Error ? err.message : "unknown"}`, time: new Date().toLocaleTimeString("en-ZA") },
+      ]);
+    } finally {
+      setText("");
+      setSending(false);
+    }
+  }
+
+  return (
+    <Card className="p-4 bg-amber-50 border-amber-200">
+      <div className="flex items-center gap-2 mb-3">
+        <Badge className="bg-amber-100 text-amber-800 text-[10px] font-semibold hover:bg-amber-100">
+          DEMO MODE
+        </Badge>
+        <span className="text-xs font-semibold text-ink">Demo WhatsApp Phone</span>
+        <span className="text-[10px] text-muted-foreground ml-auto">
+          MockAdapter active — sends via webhook pipeline
+        </span>
+      </div>
+      <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
+        Simulate an inbound WhatsApp message from the customer&apos;s phone. The message goes through
+        the full webhook pipeline: secret-gate → idempotency check → contact lookup → AI agent →
+        outbound reply via MockAdapter.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr_auto] gap-2 mb-3">
+        <Input
+          placeholder="+27721234567"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="text-sm h-9"
+        />
+        <Input
+          placeholder="Type a message as the customer…"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
+          className="text-sm h-9"
+        />
+        <Button
+          size="sm"
+          className="bg-brand-500 hover:bg-brand-600 text-white h-9"
+          onClick={send}
+          disabled={!text.trim() || !phone.trim() || sending}
+        >
+          {sending ? (
+            <Icon name="spinner" size={14} className="animate-spin" />
+          ) : (
+            <>
+              <Icon name="send" size={14} className="mr-1" /> Send
+            </>
+          )}
+        </Button>
+      </div>
+      {log.length > 0 && (
+        <div className="space-y-1 max-h-32 overflow-y-auto scroll-thin bg-white rounded-lg p-2 border border-amber-200">
+          {log.map((entry, i) => (
+            <div
+              key={i}
+              className={`text-[11px] flex items-start gap-2 ${
+                entry.direction === "system"
+                  ? "text-muted-foreground italic"
+                  : entry.direction === "inbound"
+                  ? "text-ink"
+                  : "text-brand-700"
+              }`}
+            >
+              <span className="text-[9px] text-muted-foreground shrink-0 mt-0.5">{entry.time}</span>
+              <span className="shrink-0">
+                {entry.direction === "inbound" ? "📱→" : entry.direction === "outbound" ? "←🤖" : "⚙"}
+              </span>
+              <span>{entry.body}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 

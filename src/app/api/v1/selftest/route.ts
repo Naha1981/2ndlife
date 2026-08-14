@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getProviderName } from "@/lib/2ndlife/messaging/provider";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,10 +14,12 @@ export async function GET() {
   const status = {
     clerk: !!process.env.CLERK_SECRET_KEY ? "ok" : "missing",
     db: !!process.env.DATABASE_URL ? (db ? "ok" : "failed") : "missing",
+    messaging: getProviderName(), // 'evolution' | 'mock'
     evolution: !!process.env.EVOLUTION_API_URL ? "ok" : "not_configured",
     ozow: !!process.env.OZOW_API_KEY ? "ok" : "not_configured",
     openai: !!process.env.OPENAI_API_KEY ? "ok" : "not_configured",
     upstash: !!process.env.UPSTASH_REDIS_REST_URL ? "ok" : "not_configured",
+    webhookSecret: !!process.env.EVOLUTION_WEBHOOK_SECRET ? "ok" : "not_configured",
     timestamp: new Date().toISOString(),
   };
 
