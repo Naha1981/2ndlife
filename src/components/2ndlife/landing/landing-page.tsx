@@ -1,11 +1,18 @@
 "use client";
 
 import { Logo } from "../shared/logo";
-import { Icon } from "../shared/icon";
 import { useAppStore } from "@/lib/2ndlife/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import {
   CheckCircle2,
   ArrowRight,
@@ -15,26 +22,56 @@ import {
   CreditCard,
   BarChart3,
   ChevronDown,
-  X,
+  Menu,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { verticalOrder, verticalLabels, verticals } from "@/lib/2ndlife/verticals";
 import { useCaseOrder, useCaseLabels } from "@/lib/2ndlife/use-cases";
 
 export function LandingPage() {
   const { enterApp, setMarketingView } = useAppStore();
   const [industryOpen, setIndustryOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  /**
+   * Navigate to a section on the home view.
+   * If we're not on home, switch first, then scroll after render.
+   */
+  const goToSection = useCallback(
+    (sectionId: string) => {
+      setMarketingView("main");
+      setMobileOpen(false);
+      setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    },
+    [setMarketingView]
+  );
+
+  const goToView = useCallback(
+    (view: string) => {
+      setMarketingView(view);
+      setMobileOpen(false);
+      window.scrollTo({ top: 0 });
+    },
+    [setMarketingView]
+  );
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f6f8f7] text-[#0b1220]">
+    <div className="min-h-screen flex flex-col bg-[#f6f8f7] text-[#0b1220] overflow-x-hidden">
       {/* ─────── NAV ─────── */}
       <header className="bg-[#052e22] text-white sticky top-0 z-50 border-b border-[#0a3b2c]">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={() => setMarketingView("main")}>
-            <Logo variant="light" size="md" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <button onClick={() => goToView("main")} className="shrink-0">
+            <Logo variant="light" height={36} className="lg:!hidden" />
+            <Logo variant="light" height={44} className="hidden lg:!block" />
           </button>
+
+          {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-7 text-sm text-gray-300">
-            <a href="#product" className="hover:text-white transition">Product</a>
+            <button onClick={() => goToSection("product")} className="hover:text-white transition">
+              Product
+            </button>
             {/* By Industry dropdown */}
             <div className="relative">
               <button
@@ -55,7 +92,7 @@ export function LandingPage() {
                       <button
                         key={slug}
                         onClick={() => {
-                          setMarketingView(`vertical:${slug}`);
+                          goToView(`vertical:${slug}`);
                           setIndustryOpen(false);
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-[#e9f6ee] transition flex items-center justify-between group"
@@ -75,7 +112,7 @@ export function LandingPage() {
                       <button
                         key={slug}
                         onClick={() => {
-                          setMarketingView(`use-case:${slug}`);
+                          goToView(`use-case:${slug}`);
                           setIndustryOpen(false);
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-[#e9f6ee] transition"
@@ -87,10 +124,14 @@ export function LandingPage() {
                 </div>
               )}
             </div>
-            <a href="#how" className="hover:text-white transition">Pricing</a>
-            <a href="#resources" className="hover:text-white transition">Resources</a>
-            <a href="#company" className="hover:text-white transition">Company</a>
+            <button onClick={() => goToView("pricing")} className="hover:text-white transition">
+              Pricing
+            </button>
+            <button onClick={() => goToView("company")} className="hover:text-white transition">
+              Company
+            </button>
           </nav>
+
           <div className="flex items-center gap-3">
             <button
               onClick={enterApp}
@@ -104,21 +145,108 @@ export function LandingPage() {
             >
               Book a Demo <ArrowRight className="ml-1 w-4 h-4" />
             </Button>
+
+            {/* Mobile menu trigger */}
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <button className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition">
+                  <Menu size={20} />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" aria-describedby={undefined} className="w-[300px] bg-[#052e22] border-[#0a3b2c] text-white overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle className="text-white">
+                    <Logo variant="light" height={32} />
+                  </SheetTitle>
+                  <SheetDescription className="sr-only">Navigation menu</SheetDescription>
+                </SheetHeader>
+                <nav className="flex flex-col gap-1 mt-4">
+                  <button
+                    onClick={() => goToSection("product")}
+                    className="text-left px-3 py-2.5 rounded-lg hover:bg-white/10 transition text-sm font-medium"
+                  >
+                    Product
+                  </button>
+                  <div className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-2">
+                    By Industry
+                  </div>
+                  {verticalOrder.map((slug) => (
+                    <button
+                      key={slug}
+                      onClick={() => goToView(`vertical:${slug}`)}
+                      className="text-left px-3 py-2 rounded-lg hover:bg-white/10 transition text-sm flex items-center justify-between"
+                    >
+                      {verticalLabels[slug]}
+                      {verticals[slug].flagship && <span className="text-[10px] text-[#16a34a]">★</span>}
+                    </button>
+                  ))}
+                  <div className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-2">
+                    By Use Case
+                  </div>
+                  {useCaseOrder.map((slug) => (
+                    <button
+                      key={slug}
+                      onClick={() => goToView(`use-case:${slug}`)}
+                      className="text-left px-3 py-2 rounded-lg hover:bg-white/10 transition text-sm"
+                    >
+                      {useCaseLabels[slug]}
+                    </button>
+                  ))}
+                  <div className="border-t border-[#0a3b2c] mt-2 pt-2">
+                    <button
+                      onClick={() => goToView("pricing")}
+                      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-white/10 transition text-sm font-medium"
+                    >
+                      Pricing
+                    </button>
+                    <button
+                      onClick={() => goToView("company")}
+                      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-white/10 transition text-sm font-medium"
+                    >
+                      Company
+                    </button>
+                    <button
+                      onClick={() => goToView("legal-popia")}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 transition text-sm text-gray-300"
+                    >
+                      POPIA
+                    </button>
+                    <button
+                      onClick={() => goToView("legal-privacy")}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 transition text-sm text-gray-300"
+                    >
+                      Privacy
+                    </button>
+                  </div>
+                  <div className="border-t border-[#0a3b2c] mt-2 pt-3 px-1">
+                    <Button
+                      onClick={() => {
+                        enterApp();
+                        setMobileOpen(false);
+                      }}
+                      className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white"
+                    >
+                      Book a Demo <ArrowRight className="ml-1 w-4 h-4" />
+                    </Button>
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
 
       <main className="flex-1">
         {/* ─────── HERO ─────── */}
-        <section className="bg-[#052e22] text-white py-24 px-6">
+        <section className="bg-[#052e22] text-white py-20 lg:py-24 px-6">
           <div className="max-w-6xl mx-auto text-center">
             <Badge className="bg-[#16a34a]/20 text-[#16a34a] border-none mb-6">
               Revenue Recovery Intelligence
             </Badge>
-            <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
               Give Your Revenue a <span className="text-[#16a34a]">Second Life.</span>
             </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-lg lg:text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
               2ndLife finds the revenue hiding in your existing systems and helps you recover it — automatically.
             </p>
             <div className="flex flex-wrap justify-center gap-4 mb-10">
@@ -128,7 +256,7 @@ export function LandingPage() {
                 </div>
               ))}
             </div>
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-wrap gap-4 justify-center">
               <Button
                 size="lg"
                 onClick={enterApp}
@@ -139,7 +267,7 @@ export function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}
+                onClick={() => goToSection("how-it-works")}
                 className="bg-transparent border-gray-600 text-white hover:bg-white/10"
               >
                 See How It Works
@@ -166,7 +294,7 @@ export function LandingPage() {
         {/* ─────── PROBLEM ─────── */}
         <section className="py-20 px-6">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-4">Every lost customer is revenue you&apos;ve already earned.</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Every lost customer is revenue you&apos;ve already earned.</h2>
             <p className="text-lg text-[#5c6b64] mb-8">
               Debit orders fail. Trials end. Quotes go cold. Invoices go unpaid. The intent was real — the follow-up wasn&apos;t.
             </p>
@@ -181,10 +309,10 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ─────── SOLUTION ─────── */}
-        <section className="bg-[#0a3b2c] text-white py-20 px-6">
+        {/* ─────── SOLUTION (#product) ─────── */}
+        <section id="product" className="bg-[#0a3b2c] text-white py-20 px-6 scroll-mt-16">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-4xl font-bold mb-2 text-center">2ndLife Changes That.</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center">2ndLife Changes That.</h2>
             <p className="text-gray-300 mb-12 text-center">We turn recovery into a workflow — empathetic, automated, and measurable.</p>
             <div className="grid md:grid-cols-2 gap-8">
               <Card className="bg-[#052e22] border-[#14604a] text-white">
@@ -219,10 +347,10 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ─────── HOW IT WORKS ─────── */}
-        <section id="how" className="py-20 px-6 bg-white">
+        {/* ─────── HOW IT WORKS (#how-it-works) ─────── */}
+        <section id="how-it-works" className="py-20 px-6 bg-white scroll-mt-16">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-4xl font-bold mb-12 text-center">How 2ndLife Works</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">How 2ndLife Works</h2>
             <div className="grid md:grid-cols-5 gap-6">
               {[
                 { icon: Upload, title: "Upload", desc: "Upload your list: lapsed customers, stale quotes, failed payments." },
@@ -244,8 +372,8 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ─────── TESTIMONIAL (Flagship Case Study) ─────── */}
-        <section className="py-20 px-6 bg-[#f6f8f7]">
+        {/* ─────── TESTIMONIAL (#proof) ─────── */}
+        <section id="proof" className="py-20 px-6 bg-[#f6f8f7] scroll-mt-16">
           <div className="max-w-4xl mx-auto">
             <div className="flex justify-center mb-4 gap-2">
               <Badge variant="outline" className="border-[#16a34a] text-[#16a34a]">Flagship Case Study</Badge>
@@ -256,7 +384,7 @@ export function LandingPage() {
             </div>
             <Card className="bg-white border-[#e4eae6] shadow-sm">
               <CardContent className="p-8 md:p-12 text-center">
-                <p className="text-2xl font-medium italic mb-6 text-[#0b1220]">
+                <p className="text-xl md:text-2xl font-medium italic mb-6 text-[#0b1220]">
                   &ldquo;2ndLife has transformed how we handle lapsed policies. In just 60 days, we recovered over R1.2 million in premium with a fraction of our call centre costs.&rdquo;
                 </p>
                 <div className="flex items-center justify-center gap-4 mb-8">
@@ -266,24 +394,24 @@ export function LandingPage() {
                     <p className="text-sm text-[#5c6b64]">Operations Manager, Funeral Secure</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4 border-t border-[#e4eae6] pt-8">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 border-t border-[#e4eae6] pt-8">
                   <div>
-                    <p className="text-3xl font-bold text-[#16a34a]">R1.2M+</p>
-                    <p className="text-xs text-[#5c6b64]">Recovered in 60 days</p>
+                    <p className="text-xl md:text-3xl font-bold text-[#16a34a]">R1.2M+</p>
+                    <p className="text-[10px] sm:text-xs text-[#5c6b64]">Recovered in 60 days</p>
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-[#16a34a]">38%</p>
-                    <p className="text-xs text-[#5c6b64]">Reactivation Rate</p>
+                    <p className="text-xl md:text-3xl font-bold text-[#16a34a]">38%</p>
+                    <p className="text-[10px] sm:text-xs text-[#5c6b64]">Reactivation Rate</p>
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-[#16a34a]">70%</p>
-                    <p className="text-xs text-[#5c6b64]">Lower Cost vs Call Centre</p>
+                    <p className="text-xl md:text-3xl font-bold text-[#16a34a]">70%</p>
+                    <p className="text-[10px] sm:text-xs text-[#5c6b64]">Lower Cost vs Call Centre</p>
                   </div>
                 </div>
                 <div className="mt-6">
                   <Button
                     variant="outline"
-                    onClick={() => setMarketingView("vertical:funeral-insurance")}
+                    onClick={() => goToView("vertical:funeral-insurance")}
                     className="border-[#16a34a] text-[#16a34a] hover:bg-[#e9f6ee]"
                   >
                     Read the full funeral insurance case study <ArrowRight className="ml-2 w-4 h-4" />
@@ -296,7 +424,7 @@ export function LandingPage() {
 
         {/* ─────── CTA ─────── */}
         <section className="bg-[#052e22] text-white py-20 px-6 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to give your revenue a second life?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to give your revenue a second life?</h2>
           <p className="text-gray-300 mb-8">Join forward-thinking businesses who are recovering more, spending less, and growing stronger.</p>
           <Button
             size="lg"
@@ -310,11 +438,11 @@ export function LandingPage() {
       </main>
 
       {/* ─────── FOOTER ─────── */}
-      <footer id="company" className="bg-[#031f17] text-gray-400 py-12 px-6">
+      <footer className="bg-[#031f17] text-gray-400 py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-2 md:col-span-1">
-              <Logo variant="light" size="sm" showTagline={false} />
+              <Logo variant="light" height={40} />
               <p className="mt-3 text-xs leading-relaxed">
                 We help businesses recover the revenue hiding in their systems — lapsed customers, stale leads, unpaid invoices, missed renewals and more.
               </p>
@@ -325,7 +453,7 @@ export function LandingPage() {
                 {verticalOrder.map((slug) => (
                   <li key={slug}>
                     <button
-                      onClick={() => setMarketingView(`vertical:${slug}`)}
+                      onClick={() => goToView(`vertical:${slug}`)}
                       className="hover:text-white transition text-left flex items-center gap-1.5"
                     >
                       {verticalLabels[slug]}
@@ -343,7 +471,7 @@ export function LandingPage() {
                 {useCaseOrder.map((slug) => (
                   <li key={slug}>
                     <button
-                      onClick={() => setMarketingView(`use-case:${slug}`)}
+                      onClick={() => goToView(`use-case:${slug}`)}
                       className="hover:text-white transition text-left"
                     >
                       {useCaseLabels[slug]}
@@ -355,10 +483,26 @@ export function LandingPage() {
             <div>
               <h4 className="text-white font-semibold text-sm mb-3">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">About</a></li>
-                <li><a href="#" className="hover:text-white transition">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition">POPIA</a></li>
-                <li><a href="#" className="hover:text-white transition">Privacy</a></li>
+                <li>
+                  <button onClick={() => goToView("company")} className="hover:text-white transition text-left">
+                    About
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => goToView("company#contact")} className="hover:text-white transition text-left">
+                    Contact
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => goToView("legal-popia")} className="hover:text-white transition text-left">
+                    POPIA
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => goToView("legal-privacy")} className="hover:text-white transition text-left">
+                    Privacy
+                  </button>
+                </li>
               </ul>
             </div>
           </div>

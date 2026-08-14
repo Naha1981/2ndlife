@@ -1,68 +1,77 @@
 "use client";
 
-import Image from "next/image";
+/**
+ * 2ndLife Logo — inline SVG (transparent background, scales losslessly).
+ * The circular arrow mark is always brand green (#16a34a).
+ * The wordmark + tagline use `currentColor`, so the parent's `color` CSS
+ * controls them: white on dark green headers, dark green on light backgrounds.
+ *
+ * One logo. No separate text block beside it. The SVG IS the brand.
+ */
 
 interface LogoProps {
   variant?: "light" | "dark";
-  size?: "sm" | "md" | "lg" | "xl";
-  showTagline?: boolean;
+  height?: number;
   className?: string;
+  showTagline?: boolean;
 }
 
-/**
- * 2ndLife logo — uses the exact uploaded asset.
- * The PNG has a transparent background and works on any color.
- */
 export function Logo({
   variant = "light",
-  size = "md",
-  showTagline = true,
+  height = 40,
   className = "",
+  showTagline = true,
 }: LogoProps) {
-  const sizes = {
-    sm: { h: 28, w: 110 },
-    md: { h: 36, w: 144 },
-    lg: { h: 48, w: 192 },
-    xl: { h: 64, w: 256 },
-  };
-  const s = sizes[size];
+  const color = variant === "light" ? "#ffffff" : "#052e22";
+  // viewBox is 720×220, so width = height × (720/220) ≈ height × 3.27
+  const width = Math.round(height * 3.27);
 
   return (
-    <div className={`flex items-center ${className}`}>
-      <div
-        className="relative shrink-0"
-        style={{ height: s.h, width: s.w * 0.4 }}
-      >
-        <Image
-          src="/2ndlife-logo.png"
-          alt="2ndLife — Revenue Recovery Intelligence"
-          width={s.w * 0.4}
-          height={s.h}
-          priority
-          className="object-contain"
-          style={{ filter: variant === "dark" ? "invert(0)" : "none" }}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 720 220"
+      role="img"
+      aria-label="2ndLife — Revenue Recovery Intelligence"
+      width={width}
+      height={height}
+      style={{ color, display: "block" }}
+      className={className}
+    >
+      {/* Circular recovery arrow — always brand green */}
+      <g>
+        <circle
+          cx="110"
+          cy="105"
+          r="78"
+          fill="none"
+          stroke="#16a34a"
+          strokeWidth="16"
+          strokeLinecap="round"
+          strokeDasharray="402 88"
+          transform="rotate(-52 110 105)"
         />
-      </div>
+        <path d="M148 12 L192 30 L150 52 Z" fill="#16a34a" />
+      </g>
+      {/* Wordmark — inherits currentColor */}
+      <g fill="currentColor" fontFamily="Inter, 'Segoe UI', Arial, sans-serif" fontWeight="800">
+        <text x="70" y="128" fontSize="76">2</text>
+        <text x="116" y="128" fontSize="46">nd</text>
+        <text x="205" y="128" fontSize="76">Life</text>
+      </g>
+      {/* Tagline — inherits currentColor, slightly transparent */}
       {showTagline && (
-        <div className="ml-2 hidden sm:block leading-tight">
-          <div
-            className={`font-extrabold tracking-tight ${
-              variant === "light" ? "text-white" : "text-brand-950"
-            }`}
-            style={{ fontSize: size === "sm" ? 14 : size === "md" ? 16 : 18 }}
-          >
-            2ndLife
-          </div>
-          <div
-            className={`uppercase tracking-[0.2em] font-medium ${
-              variant === "light" ? "text-brand-200/70" : "text-muted-foreground"
-            }`}
-            style={{ fontSize: 8 }}
-          >
-            Revenue Recovery
-          </div>
-        </div>
+        <text
+          x="208"
+          y="163"
+          fontFamily="Inter, Arial, sans-serif"
+          fontSize="15"
+          letterSpacing="3.2"
+          fill="currentColor"
+          opacity="0.72"
+        >
+          REVENUE RECOVERY INTELLIGENCE
+        </text>
       )}
-    </div>
+    </svg>
   );
 }

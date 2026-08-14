@@ -4,6 +4,9 @@ import { useAppStore } from "@/lib/2ndlife/store";
 import { LandingPage } from "@/components/2ndlife/landing/landing-page";
 import { VerticalPage } from "@/components/2ndlife/landing/vertical-page";
 import { UseCasePage } from "@/components/2ndlife/landing/use-case-page";
+import { PricingPage } from "@/components/2ndlife/landing/pricing-page";
+import { CompanyPage } from "@/components/2ndlife/landing/company-page";
+import { LegalPopiaPage, LegalPrivacyPage } from "@/components/2ndlife/landing/legal-pages";
 import { verticals } from "@/lib/2ndlife/verticals";
 import { useCases } from "@/lib/2ndlife/use-cases";
 import { AppShell } from "@/components/2ndlife/app/app-shell";
@@ -27,23 +30,45 @@ export default function Home() {
 
   // Marketing pages render outside the app shell
   if (view === "landing") {
+    // Vertical pages: vertical:<slug>
     if (marketingView.startsWith("vertical:")) {
       const slug = marketingView.slice("vertical:".length);
       const config = verticals[slug];
       if (config) return <VerticalPage config={config} />;
-      // Fallback to main landing if slug invalid
       return <LandingPage />;
     }
+
+    // Use case pages: use-case:<slug>
     if (marketingView.startsWith("use-case:")) {
       const slug = marketingView.slice("use-case:".length);
       const config = useCases[slug];
       if (config) return <UseCasePage config={config} />;
       return <LandingPage />;
     }
+
+    // Pricing page
+    if (marketingView === "pricing") {
+      return <PricingPage />;
+    }
+
+    // Company page (also handles "company#contact" — CompanyPage scrolls internally)
+    if (marketingView === "company" || marketingView === "company#contact") {
+      return <CompanyPage />;
+    }
+
+    // Legal pages
+    if (marketingView === "legal-popia") {
+      return <LegalPopiaPage />;
+    }
+    if (marketingView === "legal-privacy") {
+      return <LegalPrivacyPage />;
+    }
+
+    // Default: horizontal landing page
     return <LandingPage />;
   }
 
-  // All other views render inside the app shell
+  // App views render inside the app shell
   return (
     <AppShell>
       {view === "dashboard" && <DashboardView />}

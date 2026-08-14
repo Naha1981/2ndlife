@@ -29,7 +29,7 @@ export function UseCasePage({ config }: { config: UseCaseConfig }) {
       <header className="bg-[#052e22] text-white sticky top-0 z-50 border-b border-[#0a3b2c]">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <button onClick={() => setMarketingView("main")}>
-            <Logo variant="light" size="md" />
+            <Logo variant="light" height={40} />
           </button>
           <nav className="hidden lg:flex items-center gap-7 text-sm text-gray-300">
             <button onClick={() => setMarketingView("main")} className="hover:text-white transition">

@@ -32,7 +32,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ─────── SIDEBAR ─────── */}
       <aside className="w-[260px] bg-brand-900 text-brand-100 flex flex-col shrink-0 sticky top-0 h-screen">
         <div className="px-4 pt-5 pb-3 cursor-pointer" onClick={exitToLanding}>
-          <Logo variant="light" size="md" />
+          <Logo variant="light" height={36} />
         </div>
         <nav className="flex-1 px-2.5 py-3 space-y-1 overflow-y-auto scroll-thin">
           {navItems.map((item) => {
