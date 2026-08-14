@@ -1,8 +1,8 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// 2ndLife — Prisma schema (SQLite)
+// Multi-tenant Revenue Recovery Intelligence platform.
+// Every business table has tenant_id; isolation enforced in the data-access layer.
+// SQLite doesn't support enums natively, so status fields use String with
+// documented allowed values enforced at the service layer (Zod).
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +13,253 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────────────────────────────────────
+// Core tenant tables
+// ─────────────────────────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  industry  String   @default("general") // funeral-insurance, subscriptions, financial-services, education, healthcare, retail, b2b-services, general
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships     Membership[]
+  customers       Customer[]
+  campaigns       Campaign[]
+  conversations   Conversation[]
+  payments        Payment[]
+  auditLogs       AuditLog[]
+  imports         Import[]
+  opportunities   RecoveryOpportunity[]
+  customerContacts CustomerContact[]
+  messages        ConversationMessage[]
+}
+
 model User {
   id        String   @id @default(cuid())
+  clerkId   String   @unique
   email     String   @unique
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  auditLogs   AuditLog[]
 }
 
-model Post {
+model Membership {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  tenantId  String
+  userId    String
+  role      String   @default("member") // owner | admin | member
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Customer domain
+// ─────────────────────────────────────────────────────────────
+
+model Customer {
+  id            String   @id @default(cuid())
+  tenantId      String
+  externalId    String?
+  firstName     String?
+  lastName      String?
+  status        String   @default("active") // active | lapsed | failed_debit | dormant | at_risk
+  lifetimeValue Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts     CustomerContact[]
+  opportunities RecoveryOpportunity[]
+  conversations Conversation[]
+
+  @@index([tenantId])
+}
+
+model CustomerContact {
+  id             String   @id @default(cuid())
+  tenantId       String
+  customerId     String
+  type           String // phone | email
+  value          String
+  isPrimary      Boolean  @default(false)
+  whatsappValid  Boolean  @default(false)
+  optOut         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([customerId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Recovery opportunity (core domain object)
+// ─────────────────────────────────────────────────────────────
+
+model RecoveryOpportunity {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  customerId         String
+  sourceRecordId     String?
+  category           String // lapsed_customer | stale_quote | unpaid_invoice | failed_payment | missed_renewal | dormant_customer | at_risk_recurring | abandoned_cart
+  score              Int      @default(0) // 0–100
+  estimatedValue     Float?
+  actualValue        Float?
+  status             String   @default("new") // new | qualified | queued | contacted | engaged | negotiating | converted | recovered | declined | unresponsive | failed | suppressed
+  reason             String? // JSON-serialized { reasons: [], risks: [] }
+  recommendedAction  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer      Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+  payments      Payment[]
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Imports
+// ─────────────────────────────────────────────────────────────
+
+model Import {
+  id           String   @id @default(cuid())
+  tenantId     String
+  filename     String
+  totalRows    Int      @default(0)
+  validRows    Int      @default(0)
+  errorRows    Int      @default(0)
+  duplicates   Int      @default(0)
+  status       String   @default("pending") // pending | processing | completed | failed
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Campaigns
+// ─────────────────────────────────────────────────────────────
+
+model Campaign {
+  id             String   @id @default(cuid())
+  tenantId       String
+  name           String
+  audienceFilters String? // JSON: { inactiveDaysGte, minScore, whatsappValid, excludeSuppressed }
+  channel        String   @default("whatsapp")
+  minScore       Int      @default(0)
+  status         String   @default("draft") // draft | dry_run | active | paused | completed | stopped
+  config         String?  // JSON: { sendCapPerHour, businessHours, retries, offerBandId, escalateAfterObjections, stopOptOutRatePct }
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Conversations & messages
+// ─────────────────────────────────────────────────────────────
+
+model Conversation {
+  id             String   @id @default(cuid())
+  tenantId       String
+  customerId     String
+  opportunityId  String?
+  campaignId     String?
+  channel        String   @default("whatsapp")
+  status         String   @default("open") // open | engaged | awaiting_human | recovered | opted_out | closed
+  intent         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer     Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  opportunity  RecoveryOpportunity?  @relation(fields: [opportunityId], references: [id])
+  campaign     Campaign?             @relation(fields: [campaignId], references: [id])
+  messages     ConversationMessage[]
+
+  @@index([tenantId])
+  @@index([customerId])
+}
+
+model ConversationMessage {
+  id             String   @id @default(cuid())
+  tenantId       String
+  conversationId String
+  role           String // ai | customer | system
+  body           String
+  kind           String  @default("text") // text | payment_request | payment_confirmed | opt_out | escalation
+  amount         Float?
+  metadata       String? // JSON
+  createdAt      DateTime @default(now())
+
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([conversationId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Payments
+// ─────────────────────────────────────────────────────────────
+
+model Payment {
+  id               String   @id @default(cuid())
+  tenantId         String
+  opportunityId    String?
+  provider         String // ozow | payfast | stripe
+  providerReference String
+  amount           Float
+  currency         String   @default("ZAR")
+  status           String   @default("pending") // pending | confirmed | failed | refunded
+  webhookPayload   String?  // JSON
+  idempotencyKey   String   @unique
+  createdAt        DateTime @default(now())
+  confirmedAt      DateTime?
+
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  opportunity RecoveryOpportunity? @relation(fields: [opportunityId], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Audit log (append-only)
+// ─────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String?
+  userId     String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   String? // JSON
+  createdAt  DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([entityType, entityId])
 }

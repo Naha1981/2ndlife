@@ -16,7 +16,13 @@ export type AppView =
   | "integrations"
   | "settings";
 
-export type MarketingView = "main" | "funeral-insurance";
+/**
+ * Marketing view state — supports:
+ * - "main"                          → horizontal platform landing
+ * - "vertical:<slug>"               → vertical landing page (funeral-insurance, subscriptions, etc.)
+ * - "use-case:<slug>"               → use case landing page (win-backs, renewals, invoices, quotes, failed-payments)
+ */
+export type MarketingView = string;
 
 interface AppState {
   view: AppView;
@@ -29,7 +35,8 @@ interface AppState {
   openConversation: (id: string) => void;
   enterApp: () => void;
   exitToLanding: () => void;
-  goToVertical: (v: MarketingView) => void;
+  goToVertical: (slug: string) => void;
+  goToUseCase: (slug: string) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -38,11 +45,11 @@ export const useAppStore = create<AppState>((set) => ({
   selectedCustomerId: null,
   selectedConversationId: null,
   setView: (view) => set({ view }),
-  setMarketingView: (marketingView) =>
-    set({ view: "landing", marketingView }),
+  setMarketingView: (marketingView) => set({ view: "landing", marketingView }),
   openCustomer: (id) => set({ view: "customer-detail", selectedCustomerId: id }),
   openConversation: (id) => set({ view: "conversations", selectedConversationId: id }),
   enterApp: () => set({ view: "dashboard" }),
   exitToLanding: () => set({ view: "landing", marketingView: "main" }),
-  goToVertical: (v) => set({ view: "landing", marketingView: v }),
+  goToVertical: (slug) => set({ view: "landing", marketingView: `vertical:${slug}` }),
+  goToUseCase: (slug) => set({ view: "landing", marketingView: `use-case:${slug}` }),
 }));

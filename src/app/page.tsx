@@ -2,7 +2,10 @@
 
 import { useAppStore } from "@/lib/2ndlife/store";
 import { LandingPage } from "@/components/2ndlife/landing/landing-page";
-import { FuneralInsurancePage } from "@/components/2ndlife/landing/funeral-insurance-page";
+import { VerticalPage } from "@/components/2ndlife/landing/vertical-page";
+import { UseCasePage } from "@/components/2ndlife/landing/use-case-page";
+import { verticals } from "@/lib/2ndlife/verticals";
+import { useCases } from "@/lib/2ndlife/use-cases";
 import { AppShell } from "@/components/2ndlife/app/app-shell";
 import { DashboardView } from "@/components/2ndlife/screens/dashboard-view";
 import { ImportWizardView } from "@/components/2ndlife/screens/import-wizard-view";
@@ -24,8 +27,18 @@ export default function Home() {
 
   // Marketing pages render outside the app shell
   if (view === "landing") {
-    if (marketingView === "funeral-insurance") {
-      return <FuneralInsurancePage />;
+    if (marketingView.startsWith("vertical:")) {
+      const slug = marketingView.slice("vertical:".length);
+      const config = verticals[slug];
+      if (config) return <VerticalPage config={config} />;
+      // Fallback to main landing if slug invalid
+      return <LandingPage />;
+    }
+    if (marketingView.startsWith("use-case:")) {
+      const slug = marketingView.slice("use-case:".length);
+      const config = useCases[slug];
+      if (config) return <UseCasePage config={config} />;
+      return <LandingPage />;
     }
     return <LandingPage />;
   }

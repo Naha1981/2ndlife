@@ -18,16 +18,8 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-
-const INDUSTRIES = [
-  { id: "funeral-insurance", label: "Funeral & Micro-Insurance", flagship: true },
-  { id: "subscriptions", label: "Subscriptions", flagship: false },
-  { id: "financial-services", label: "Financial Services", flagship: false },
-  { id: "education", label: "Education", flagship: false },
-  { id: "healthcare", label: "Healthcare", flagship: false },
-  { id: "retail", label: "Retail", flagship: false },
-  { id: "b2b", label: "B2B", flagship: false },
-];
+import { verticalOrder, verticalLabels, verticals } from "@/lib/2ndlife/verticals";
+import { useCaseOrder, useCaseLabels } from "@/lib/2ndlife/use-cases";
 
 export function LandingPage() {
   const { enterApp, setMarketingView } = useAppStore();
@@ -53,38 +45,43 @@ export function LandingPage() {
                 By Industry <ChevronDown size={14} className={`transition ${industryOpen ? "rotate-180" : ""}`} />
               </button>
               {industryOpen && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-[#e4eae6] py-2 z-50">
-                  <div className="px-3 py-1.5 text-[10px] font-bold text-[#5c6b64] uppercase tracking-wider">
+                <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-[#e4eae6] py-2 z-50 max-h-[80vh] overflow-y-auto">
+                  <div className="px-3 py-1.5 text-[10px] font-bold text-[#5c6b64] uppercase tracking-wider sticky top-0 bg-white">
                     By Industry
                   </div>
-                  {INDUSTRIES.map((ind) => (
-                    <button
-                      key={ind.id}
-                      onClick={() => {
-                        if (ind.id === "funeral-insurance") {
-                          setMarketingView("funeral-insurance");
-                        }
-                        setIndustryOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-[#e9f6ee] transition flex items-center justify-between group"
-                    >
-                      <span className="text-sm text-[#0b1220] font-medium">{ind.label}</span>
-                      {ind.flagship && (
-                        <Badge className="bg-[#16a34a] text-white text-[9px] h-4 px-1.5">Flagship</Badge>
-                      )}
-                      {ind.id !== "funeral-insurance" && (
-                        <span className="text-[9px] text-[#5c6b64]">Soon</span>
-                      )}
-                    </button>
-                  ))}
-                  <div className="border-t border-[#e4eae6] mt-1 pt-1">
+                  {verticalOrder.map((slug) => {
+                    const cfg = verticals[slug];
+                    return (
+                      <button
+                        key={slug}
+                        onClick={() => {
+                          setMarketingView(`vertical:${slug}`);
+                          setIndustryOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-[#e9f6ee] transition flex items-center justify-between group"
+                      >
+                        <span className="text-sm text-[#0b1220] font-medium">{verticalLabels[slug]}</span>
+                        {cfg.flagship && (
+                          <Badge className="bg-[#16a34a] text-white text-[9px] h-4 px-1.5">Flagship</Badge>
+                        )}
+                      </button>
+                    );
+                  })}
+                  <div className="border-t border-[#e4eae6] mt-1 pt-1 sticky bottom-0 bg-white">
                     <div className="px-3 py-1.5 text-[10px] font-bold text-[#5c6b64] uppercase tracking-wider">
                       By Use Case
                     </div>
-                    {["Win-backs", "Renewals", "Invoices", "Quotes", "Failed payments"].map((uc) => (
-                      <div key={uc} className="px-3 py-1.5 text-sm text-[#5c6b64] flex items-center justify-between">
-                        {uc} <span className="text-[9px]">Soon</span>
-                      </div>
+                    {useCaseOrder.map((slug) => (
+                      <button
+                        key={slug}
+                        onClick={() => {
+                          setMarketingView(`use-case:${slug}`);
+                          setIndustryOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-[#e9f6ee] transition"
+                      >
+                        <span className="text-sm text-[#0b1220] font-medium">{useCaseLabels[slug]}</span>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -286,7 +283,7 @@ export function LandingPage() {
                 <div className="mt-6">
                   <Button
                     variant="outline"
-                    onClick={() => setMarketingView("funeral-insurance")}
+                    onClick={() => setMarketingView("vertical:funeral-insurance")}
                     className="border-[#16a34a] text-[#16a34a] hover:bg-[#e9f6ee]"
                   >
                     Read the full funeral insurance case study <ArrowRight className="ml-2 w-4 h-4" />
@@ -325,23 +322,34 @@ export function LandingPage() {
             <div>
               <h4 className="text-white font-semibold text-sm mb-3">By Industry</h4>
               <ul className="space-y-2 text-sm">
-                <li>
-                  <button onClick={() => setMarketingView("funeral-insurance")} className="hover:text-white transition text-left">
-                    Funeral Insurance <span className="text-[10px] text-[#16a34a]">★</span>
-                  </button>
-                </li>
-                <li><span className="text-gray-500">Subscriptions <span className="text-[10px]">(soon)</span></span></li>
-                <li><span className="text-gray-500">Financial Services <span className="text-[10px]">(soon)</span></span></li>
-                <li><span className="text-gray-500">Healthcare <span className="text-[10px]">(soon)</span></span></li>
+                {verticalOrder.map((slug) => (
+                  <li key={slug}>
+                    <button
+                      onClick={() => setMarketingView(`vertical:${slug}`)}
+                      className="hover:text-white transition text-left flex items-center gap-1.5"
+                    >
+                      {verticalLabels[slug]}
+                      {verticals[slug].flagship && (
+                        <span className="text-[10px] text-[#16a34a]">★</span>
+                      )}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
             <div>
               <h4 className="text-white font-semibold text-sm mb-3">By Use Case</h4>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>Win-backs</li>
-                <li>Renewals</li>
-                <li>Unpaid invoices</li>
-                <li>Stale quotes</li>
+              <ul className="space-y-2 text-sm">
+                {useCaseOrder.map((slug) => (
+                  <li key={slug}>
+                    <button
+                      onClick={() => setMarketingView(`use-case:${slug}`)}
+                      className="hover:text-white transition text-left"
+                    >
+                      {useCaseLabels[slug]}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
             <div>

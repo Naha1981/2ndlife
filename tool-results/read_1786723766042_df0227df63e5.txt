@@ -1,0 +1,881 @@
+     1→Here are the three paste-ready prompts for GLM 5.2 — **one prompt per scope** (per the NahaLabs one-session-one-scope rule). Run them in order and verify after each.
+     2→
+     3→---
+     4→
+     5→## PROMPT 1 — Build the 6 vertical pages (data-driven)
+     6→
+     7→Paste this into GLM 5.2 after Option A is done:
+     8→
+     9→```text
+    10→Let's build the 6 remaining vertical landing pages using a DATA-DRIVEN template
+    11→so the architecture mirrors our PRD rule: "verticals are configuration packages, not forks."
+    12→
+    13→STEP 1 — Create a reusable VerticalPage template component:
+    14→File: components/marketing/vertical-page.tsx
+    15→
+    16→This component takes a `config` object and renders the same structure GLM used for
+    17→/by-industry/funeral-insurance (Hero → Problem → Solution → How It Works → CTA).
+    18→
+    19→```tsx
+    20→"use client";
+    21→import Link from 'next/link';
+    22→import { Button } from "@/components/ui/button";
+    23→import { Card, CardContent } from "@/components/ui/card";
+    24→import { Badge } from "@/components/ui/badge";
+    25→import { ArrowRight, ShieldCheck, CreditCard, Brain, MessageSquare } from 'lucide-react';
+    26→import { useAppStore } from "@/store";
+    27→
+    28→export interface VerticalConfig {
+    29→  slug: string;
+    30→  eyebrow: string;
+    31→  headline: string;
+    32→  headlineAccent: string;
+    33→  subhead: string;
+    34→  problemTitle: string;
+    35→  problemSub: string;
+    36→  problemConsequence: string;
+    37→  problemBullets: string[];
+    38→  solutions: { icon: "chat"|"card"|"brain"|"shield"|"chart"; title: string; desc: string }[];
+    39→  howItWorks: { title: string; desc: string }[];
+    40→  ctaTitle: string;
+    41→  ctaSub: string;
+    42→  flagship?: boolean;
+    43→}
+    44→
+    45→const iconMap = { chat: MessageSquare, card: CreditCard, brain: Brain, shield: ShieldCheck, chart: MessageSquare };
+    46→
+    47→export function VerticalPage({ config }: { config: VerticalConfig }) {
+    48→  const setMarketingView = useAppStore((s) => s.setMarketingView);
+    49→  return (
+    50→    <main className="bg-[#f6f8f7] text-[#0b1220]">
+    51→      <section className="bg-[#052e22] text-white py-24 px-6">
+    52→        <div className="max-w-6xl mx-auto">
+    53→          <button onClick={() => setMarketingView('home')} className="text-[#16a34a] text-sm mb-8 inline-block hover:underline">← Back to 2ndLife Platform</button>
+    54→          <Badge className="bg-[#16a34a]/20 text-[#16a34a] border-none mb-6">{config.eyebrow}</Badge>
+    55→          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-tight max-w-4xl">
+    56→            {config.headline} <span className="text-[#16a34a]">{config.headlineAccent}</span>
+    57→          </h1>
+    58→          <p className="text-xl text-gray-300 mb-8 max-w-3xl">{config.subhead}</p>
+    59→          <Button size="lg" className="bg-[#16a34a] hover:bg-[#15803d]">See It In Action <ArrowRight className="ml-2 w-4 h-4" /></Button>
+    60→        </div>
+    61→      </section>
+    62→
+    63→      <section className="py-20 px-6">
+    64→        <div className="max-w-4xl mx-auto text-center">
+    65→          <h2 className="text-4xl font-bold mb-4">{config.problemTitle}</h2>
+    66→          <p className="text-lg text-[#5c6b64] mb-8">{config.problemSub}</p>
+    67→          <p className="font-bold text-xl mb-6">{config.problemConsequence}</p>
+    68→          <div className="grid md:grid-cols-2 gap-4 text-left max-w-2xl mx-auto">
+    69→            {config.problemBullets.map(b => (
+    70→              <div key={b} className="flex items-center gap-3 text-red-600">
+    71→                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+    72→                <span className="font-medium">{b}</span>
+    73→              </div>
+    74→            ))}
+    75→          </div>
+    76→        </div>
+    77→      </section>
+    78→
+    79→      <section className="bg-[#0a3b2c] text-white py-20 px-6">
+    80→        <div className="max-w-5xl mx-auto">
+    81→          <h2 className="text-4xl font-bold mb-12 text-center">2ndLife Changes That.</h2>
+    82→          <div className="grid md:grid-cols-2 gap-8">
+    83→            {config.solutions.map(s => {
+    84→              const Icon = iconMap[s.icon];
+    85→              return (
+    86→                <Card key={s.title} className="bg-[#052e22] border-[#14604a] text-white">
+    87→                  <CardContent className="p-6">
+    88→                    <Icon className="w-8 h-8 text-[#16a34a] mb-4" />
+    89→                    <h3 className="text-xl font-bold mb-2">{s.title}</h3>
+    90→                    <p className="text-gray-300">{s.desc}</p>
+    91→                  </CardContent>
+    92→                </Card>
+    93→              );
+    94→            })}
+    95→          </div>
+    96→        </div>
+    97→      </section>
+    98→
+    99→      <section className="py-20 px-6 bg-white">
+   100→        <div className="max-w-5xl mx-auto">
+   101→          <h2 className="text-4xl font-bold mb-12 text-center">How It Works</h2>
+   102→          <div className="grid md:grid-cols-5 gap-6">
+   103→            {config.howItWorks.map((step, i) => (
+   104→              <div key={step.title} className="text-center">
+   105→                <div className="w-12 h-12 rounded-full bg-[#e9f6ee] text-[#16a34a] flex items-center justify-center mx-auto mb-4 font-bold text-xl">{i+1}</div>
+   106→                <h3 className="font-bold mb-2">{step.title}</h3>
+   107→                <p className="text-sm text-[#5c6b64]">{step.desc}</p>
+   108→              </div>
+   109→            ))}
+   110→          </div>
+   111→        </div>
+   112→      </section>
+   113→
+   114→      <section className="bg-[#052e22] text-white py-20 px-6 text-center">
+   115→        <h2 className="text-4xl font-bold mb-4">{config.ctaTitle}</h2>
+   116→        <p className="text-gray-300 mb-8">{config.ctaSub}</p>
+   117→        <Button size="lg" className="bg-[#16a34a] hover:bg-[#15803d]">Book Your Free Demo</Button>
+   118→      </section>
+   119→    </main>
+   120→  );
+   121→}
+   122→```
+   123→
+   124→STEP 2 — Create a config file with all 6 verticals:
+   125→File: lib/marketing/verticals.ts
+   126→
+   127→```ts
+   128→import type { VerticalConfig } from "@/components/marketing/vertical-page";
+   129→
+   130→export const verticals: Record<string, VerticalConfig> = {
+   131→  "funeral-insurance": {
+   132→    slug: "funeral-insurance",
+   133→    flagship: true,
+   134→    eyebrow: "For Funeral Administrators & Micro-Insurers",
+   135→    headline: "Recover Lapsed",
+   136→    headlineAccent: "Funeral Policies",
+   137→    subhead: "Stop relying on manual call centers. 2ndLife uses empathetic AI to re-engage lapsed members and recover premiums instantly via WhatsApp.",
+   138→    problemTitle: "Every lapsed policy is revenue you've already earned.",
+   139→    problemSub: "Debit orders fail. People's circumstances change. But the need for cover doesn't.",
+   140→    problemConsequence: "The result?",
+   141→    problemBullets: ["Millions in lost premium", "High call centre costs", "Manual, time-consuming follow-ups", "Low reactivation rates"],
+   142→    solutions: [
+   143→      { icon: "chat", title: "AI WhatsApp Conversations", desc: "Empathetic conversations that feel human. AI handles objections, explains arrears, and offers restructuring." },
+   144→      { icon: "card", title: "Instant EFT via Ozow", desc: "Customers pay via Ozow Instant EFT right inside the WhatsApp chat. No debit orders, no friction." },
+   145→      { icon: "brain", title: "Smart Prioritization", desc: "We score your lapsed book to find the members most likely to restart." },
+   146→      { icon: "shield", title: "POPIA Compliant", desc: "Built for South African regulations. Context minimization ensures member data is secure." },
+   147→    ],
+   148→    howItWorks: [
+   149→      { title: "Upload", desc: "Upload your lapsed policy list as a CSV." },
+   150→      { title: "Score", desc: "We rank and segment the best recovery opportunities." },
+   151→      { title: "Engage", desc: "AI starts empathetic WhatsApp conversations." },
+   152→      { title: "Collect", desc: "Customers pay via Ozow Instant EFT." },
+   153→      { title: "Reactivate", desc: "Policy reinstated. Revenue recovered." },
+   154→    ],
+   155→    ctaTitle: "Ready to reactivate your lapsed book?",
+   156→    ctaSub: "Join forward-thinking administrators who are recovering more, spending less, and growing stronger.",
+   157→  },
+   158→
+   159→  "subscriptions": {
+   160→    slug: "subscriptions",
+   161→    eyebrow: "For SaaS & Subscription Businesses",
+   162→    headline: "Win Back",
+   163→    headlineAccent: "Churned Subscribers",
+   164→    subhead: "Re-engage cancelled and churned customers with personalized, AI-driven win-back campaigns via WhatsApp and email.",
+   165→    problemTitle: "Every cancelled subscription is revenue walking out the door.",
+   166→    problemSub: "Credit cards expire. Trials end. Customers churn quietly. And your win-back emails get ignored.",
+   167→    problemConsequence: "The result?",
+   168→    problemBullets: ["Rising churn rates", "Wasted acquisition spend", "Low email open rates on win-back campaigns", "No visibility into churn reasons"],
+   169→    solutions: [
+   170→      { icon: "chat", title: "Channel-Agnostic Reach", desc: "WhatsApp, email, SMS — we reach churned customers where they actually respond." },
+   171→      { icon: "brain", title: "Churn Reason Intelligence", desc: "AI classifies why each customer churned and picks the right win-back offer." },
+   172→      { icon: "card", title: "Frictionless Reactivation", desc: "One-click restart via Stripe, PayFast, or Ozow — no re-keying card details." },
+   173→      { icon: "shield", title: "Respectful Cadence", desc: "Honor opt-outs instantly. Cap attempts per customer. Never burn goodwill." },
+   174→    ],
+   175→    howItWorks: [
+   176→      { title: "Sync", desc: "Connect your Stripe, Recurly, or billing system." },
+   177→      { title: "Score", desc: "We rank churned customers by likelihood to return." },
+   178→      { title: "Engage", desc: "AI runs the win-back conversation." },
+   179→      { title: "Reactivate", desc: "Customer restarts with one click." },
+   180→      { title: "Measure", desc: "Track recovered MRR in real time." },
+   181→    ],
+   182→    ctaTitle: "Turn churn into recovered MRR.",
+   183→    ctaSub: "Join subscription businesses recovering 2–4x more churned customers than email-only win-backs.",
+   184→  },
+   185→
+   186→  "financial-services": {
+   187→    slug: "financial-services",
+   188→    eyebrow: "For Financial Services & Advisors",
+   189→    headline: "Recover Missed",
+   190→    headlineAccent: "Renewals & Lapsed Clients",
+   191→    subhead: "Re-engage clients whose policies, investments, or advisory relationships have gone dormant — without adding headcount.",
+   192→    problemTitle: "Every lapsed client is lifetime value walking away.",
+   193→    problemSub: "Policies expire. Advisory fees lapse. Clients ghost. And manual outreach doesn't scale.",
+   194→    problemConsequence: "The result?",
+   195→    problemBullets: ["Lost advisory fees and AUM", "High cost of client acquisition", "Manual follow-up doesn't scale", "No visibility into lapsed book"],
+   196→    solutions: [
+   197→      { icon: "chat", title: "Professional AI Outreach", desc: "Empathetic, compliant conversations appropriate for financial services clients." },
+   198→      { icon: "brain", title: "Book-of-Business Scoring", desc: "Rank lapsed clients by lifetime value and re-engagement likelihood." },
+   199→      { icon: "card", title: "Secure Payment Links", desc: "POPIA-compliant payment flows for fee restarts and arrears." },
+   200→      { icon: "shield", title: "FSCA-Ready Audit Trail", desc: "Every interaction logged for compliance review." },
+   201→    ],
+   202→    howItWorks: [
+   203→      { title: "Upload", desc: "Upload your lapsed client book." },
+   204→      { title: "Score", desc: "We rank by LTV and re-engagement likelihood." },
+   205→      { title: "Engage", desc: "AI runs compliant, professional outreach." },
+   206→      { title: "Reactivate", desc: "Client restarts or re-engages." },
+   207→      { title: "Report", desc: "Audit-ready compliance trail." },
+   208→    ],
+   209→    ctaTitle: "Recover your lapsed book of business.",
+   210→    ctaSub: "Join advisors and brokerages recovering client relationships at scale.",
+   211→  },
+   212→
+   213→  "education": {
+   214→    slug: "education",
+   215→    eyebrow: "For Schools, Universities & EdTech",
+   216→    headline: "Recover Lost",
+   217→    headlineAccent: "Enrollments & Tuition",
+   218→    subhead: "Re-engage prospective students who dropped out of admissions and recover unpaid tuition — without overwhelming your admin team.",
+   219→    problemTitle: "Every dropped applicant and unpaid fee is lost revenue.",
+   220→    problemSub: "Students drop out of the funnel. Tuition goes unpaid. Parents ghost admissions calls.",
+   221→    problemConsequence: "The result?",
+   222→    problemBullets: ["Lost enrollment revenue", "High cost of student acquisition", "Overloaded admissions teams", "Unpaid tuition chasing takes months"],
+   223→    solutions: [
+   224→      { icon: "chat", title: "Student-Friendly AI", desc: "Empathetic WhatsApp conversations in the student's language (incl. Zulu, Xhosa, Afrikaans)." },
+   225→      { icon: "brain", title: "Admissions Funnel Scoring", desc: "Rank drop-offs by likelihood to re-enroll." },
+   226→      { icon: "card", title: "Tuition Payment Links", desc: "Instant EFT and card options right in the chat." },
+   227→      { icon: "shield", title: "POPIA-Compliant Parent Contact", desc: "Consent-aware outreach to guardians." },
+   228→    ],
+   229→    howItWorks: [
+   230→      { title: "Upload", desc: "Upload your lapsed applicant or unpaid tuition list." },
+   231→      { title: "Score", desc: "We rank by re-enrollment likelihood." },
+   232→      { title: "Engage", desc: "AI reaches out on WhatsApp." },
+   233→      { title: "Collect", desc: "Tuition paid or deposit secured." },
+   234→      { title: "Enroll", desc: "Student returns to the program." },
+   235→    ],
+   236→    ctaTitle: "Fill more seats. Collect more tuition.",
+   237→    ctaSub: "Join institutions recovering enrollments and tuition fees without adding headcount.",
+   238→  },
+   239→
+   240→  "healthcare": {
+   241→    slug: "healthcare",
+   242→    eyebrow: "For Clinics, Dentists & Medical Practices",
+   243→    headline: "Recover Missed",
+   244→    headlineAccent: "Appointments & Copays",
+   245→    subhead: "Re-engage no-show patients and recover unpaid copays — without a single phone call from your front desk.",
+   246→    problemTitle: "Every no-show and unpaid copay is revenue lost.",
+   247→    problemSub: "Patients skip appointments. Copays go unpaid. And chasing them burns staff time.",
+   248→    problemConsequence: "The result?",
+   249→    problemBullets: ["Lost appointment revenue", "Unpaid copays piling up", "Overloaded front desk", "No time to chase patients"],
+   250→    solutions: [
+   251→      { icon: "chat", title: "HIPAA/POPIA-Compliant AI", desc: "Empathetic outreach that respects patient privacy." },
+   252→      { icon: "brain", title: "Patient Scoring", desc: "Rank no-shows by likelihood to reschedule." },
+   253→      { icon: "card", title: "Instant Copay Collection", desc: "Pay copays or outstanding balances right in WhatsApp." },
+   254→      { icon: "shield", title: "Audit Trail", desc: "Every patient interaction logged for compliance." },
+   255→    ],
+   256→    howItWorks: [
+   257→      { title: "Upload", desc: "Upload no-shows and unpaid patient lists." },
+   258→      { title: "Score", desc: "We rank by reschedule likelihood." },
+   259→      { title: "Engage", desc: "AI reaches out on WhatsApp." },
+   260→      { title: "Collect", desc: "Copays and balances paid." },
+   261→      { title: "Reschedule", desc: "Patient returns to the schedule." },
+   262→    ],
+   263→    ctaTitle: "Fill the schedule. Collect the balance.",
+   264→    ctaSub: "Join practices recovering appointment revenue without adding front-desk headcount.",
+   265→  },
+   266→
+   267→  "retail": {
+   268→    slug: "retail",
+   269→    eyebrow: "For Retailers & E-Commerce",
+   270→    headline: "Win Back",
+   271→    headlineAccent: "Dormant Customers",
+   272→    subhead: "Re-engage customers who haven't shopped in months and recover abandoned carts — with AI that feels personal, not spammy.",
+   273→    problemTitle: "Every dormant customer is revenue you've already spent to acquire.",
+   274→    problemSub: "Carts get abandoned. Customers go cold. And generic 'we miss you' emails get ignored.",
+   275→    problemConsequence: "The result?",
+   276→    problemBullets: ["Wasted acquisition spend", "Low email open rates", "Abandoned carts sitting in limbo", "No insight into win-back ROI"],
+   277→    solutions: [
+   278→      { icon: "chat", title: "Personalized WhatsApp", desc: "AI uses their past purchases to craft relevant win-back messages." },
+   279→      { icon: "brain", title: "Customer Scoring", desc: "Rank dormant customers by win-back likelihood and predicted LTV." },
+   280→      { icon: "card", title: "In-Chat Checkout", desc: "Recover carts with one-tap payment — no return-to-site friction." },
+   281→      { icon: "shield", title: "Smart Opt-Out", desc: "Honor STOP instantly. Cap attempts. Never damage brand goodwill." },
+   282→    ],
+   283→    howItWorks: [
+   284→      { title: "Sync", desc: "Connect Shopify, WooCommerce, or your POS." },
+   285→      { title: "Score", desc: "We rank dormant customers by win-back likelihood." },
+   286→      { title: "Engage", desc: "AI runs personalized WhatsApp outreach." },
+   287→      { title: "Collect", desc: "Cart recovered with in-chat checkout." },
+   288→      { title: "Retain", desc: "Customer returns to active status." },
+   289→    ],
+   290→    ctaTitle: "Turn dormant customers into active shoppers.",
+   291→    ctaSub: "Join retailers recovering 3–5x more abandoned carts than email-only campaigns.",
+   292→  },
+   293→
+   294→  "b2b-services": {
+   295→    slug: "b2b-services",
+   296→    eyebrow: "For B2B Services & Agencies",
+   297→    headline: "Recover Stale",
+   298→    headlineAccent: "Quotes & Unpaid Invoices",
+   299→    subhead: "Re-engage prospects who got quotes but never signed, and chase unpaid invoices without burning your sales team's time.",
+   300→    problemTitle: "Every stale quote and unpaid invoice is revenue you already earned.",
+   301→    problemSub: "Proposals go unanswered. Invoices sit at 60+ days. And chasing them manually doesn't scale.",
+   302→    problemConsequence: "The result?",
+   303→    problemBullets: ["Stale proposals sitting in inboxes", "Cash flow tied up in 60+ day invoices", "Sales teams wasting time on chase calls", "No visibility into recovery pipeline"],
+   304→    solutions: [
+   305→      { icon: "chat", title: "Professional AI Follow-Up", desc: "Polite, firm outreach that maintains the relationship while recovering revenue." },
+   306→      { icon: "brain", title: "Quote & Invoice Scoring", desc: "Rank by deal size and likelihood to convert/pay." },
+   307→      { icon: "card", title: "Instant Payment Options", desc: "EFT and card payment links right in the conversation." },
+   308→      { icon: "shield", title: "Escalation Workflows", desc: "AI handles routine follow-up; humans handle complex negotiations." },
+   309→    ],
+   310→    howItWorks: [
+   311→      { title: "Upload", desc: "Upload stale quotes and unpaid invoices." },
+   312→      { title: "Score", desc: "We rank by size and payment likelihood." },
+   313→      { title: "Engage", desc: "AI runs professional follow-up." },
+   314→      { title: "Collect", desc: "Invoice paid or quote signed." },
+   315→      { title: "Report", desc: "Recovery pipeline in real time." },
+   316→    ],
+   317→    ctaTitle: "Recover your stale pipeline.",
+   318→    ctaSub: "Join agencies and service firms recovering quotes and invoices without burning sales headcount.",
+   319→  },
+   320→};
+   321→
+   322→export const verticalOrder = [
+   323→  "funeral-insurance",
+   324→  "subscriptions",
+   325→  "financial-services",
+   326→  "education",
+   327→  "healthcare",
+   328→  "retail",
+   329→  "b2b-services",
+   330→];
+   331→```
+   332→
+   333→STEP 3 — Register all 6 in the Zustand store:
+   334→Update the store's `marketingView` union type to include all 6 slugs plus the existing ones.
+   335→Update the "By Industry" dropdown to link to each slug. Each should set `marketingView = "vertical:<slug>"`.
+   336→
+   337→STEP 4 — In the main router, when `marketingView` starts with "vertical:", render `<VerticalPage config={verticals[slug]} />`.
+   338→
+   339→STEP 5 — Verify:
+   340→- Click each of the 6 verticals from the "By Industry" dropdown
+   341→- Each renders with its unique copy, correct solutions, and correct How It Works
+   342→- Back button returns to the horizontal landing page
+   343→- All 7 vertical pages (1 flagship + 6 new) work identically
+   344→- Lint passes
+   345→
+   346→REPORT: list of pages working, any issues found, commit hash.
+   347→```
+   348→
+   349→---
+   350→
+   351→## PROMPT 2 — Build the 5 use-case pages
+   352→
+   353→Paste this into GLM 5.2 after Prompt 1 is verified:
+   354→
+   355→```text
+   356→Now build the 5 /use-cases/* pages for horizontal SEO long-tail keywords.
+   357→Reuse the same data-driven pattern from Prompt 1 — but create a NEW template because
+   358→use-case pages have a different structure (use-case problem, not vertical problem).
+   359→
+   360→STEP 1 — Create the UseCasePage template:
+   361→File: components/marketing/use-case-page.tsx
+   362→
+   363→```tsx
+   364→"use client";
+   365→import { Button } from "@/components/ui/button";
+   366→import { Card, CardContent } from "@/components/ui/card";
+   367→import { Badge } from "@/components/ui/badge";
+   368→import { ArrowRight, CheckCircle2 } from 'lucide-react';
+   369→import { useAppStore } from "@/store";
+   370→
+   371→export interface UseCaseConfig {
+   372→  slug: string;
+   373→  eyebrow: string;
+   374→  headline: string;
+   375→  headlineAccent: string;
+   376→  subhead: string;
+   377→  seoKeywords: string[];
+   378→  challenges: string[];
+   379→  outcomes: string[];
+   380→  industries: string[];
+   381→  ctaTitle: string;
+   382→  ctaSub: string;
+   383→}
+   384→
+   385→export function UseCasePage({ config }: { config: UseCaseConfig }) {
+   386→  const setMarketingView = useAppStore((s) => s.setMarketingView);
+   387→  return (
+   388→    <main className="bg-[#f6f8f7] text-[#0b1220]">
+   389→      <section className="bg-[#052e22] text-white py-24 px-6">
+   390→        <div className="max-w-6xl mx-auto">
+   391→          <button onClick={() => setMarketingView('home')} className="text-[#16a34a] text-sm mb-8 inline-block hover:underline">← Back to 2ndLife Platform</button>
+   392→          <Badge className="bg-[#16a34a]/20 text-[#16a34a] border-none mb-6">{config.eyebrow}</Badge>
+   393→          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-tight max-w-4xl">
+   394→            {config.headline} <span className="text-[#16a34a]">{config.headlineAccent}</span>
+   395→          </h1>
+   396→          <p className="text-xl text-gray-300 mb-8 max-w-3xl">{config.subhead}</p>
+   397→          <Button size="lg" className="bg-[#16a34a] hover:bg-[#15803d]">See It In Action <ArrowRight className="ml-2 w-4 h-4" /></Button>
+   398→        </div>
+   399→      </section>
+   400→
+   401→      <section className="py-20 px-6">
+   402→        <div className="max-w-4xl mx-auto">
+   403→          <h2 className="text-3xl font-bold mb-8 text-center">The challenge</h2>
+   404→          <div className="grid md:grid-cols-2 gap-4">
+   405→            {config.challenges.map(c => (
+   406→              <div key={c} className="flex items-start gap-3 text-red-600">
+   407→                <div className="w-2 h-2 mt-2 rounded-full bg-red-500 flex-shrink-0"></div>
+   408→                <span className="font-medium">{c}</span>
+   409→              </div>
+   410→            ))}
+   411→          </div>
+   412→        </div>
+   413→      </section>
+   414→
+   415→      <section className="bg-[#0a3b2c] text-white py-20 px-6">
+   416→        <div className="max-w-5xl mx-auto">
+   417→          <h2 className="text-3xl font-bold mb-12 text-center">The outcome with 2ndLife</h2>
+   418→          <div className="grid md:grid-cols-2 gap-6">
+   419→            {config.outcomes.map(o => (
+   420→              <div key={o} className="flex items-start gap-3">
+   421→                <CheckCircle2 className="w-5 h-5 text-[#16a34a] flex-shrink-0 mt-0.5" />
+   422→                <span>{o}</span>
+   423→              </div>
+   424→            ))}
+   425→          </div>
+   426→        </div>
+   427→      </section>
+   428→
+   429→      <section className="py-20 px-6 bg-white">
+   430→        <div className="max-w-4xl mx-auto text-center">
+   431→          <h2 className="text-3xl font-bold mb-8">Built for every industry</h2>
+   432→          <div className="flex flex-wrap gap-2 justify-center">
+   433→            {config.industries.map(ind => (
+   434→              <Badge key={ind} variant="outline" className="border-[#16a34a]/40 text-[#0a3b2c] text-sm px-3 py-1">{ind}</Badge>
+   435→            ))}
+   436→          </div>
+   437→        </div>
+   438→      </section>
+   439→
+   440→      <section className="bg-[#052e22] text-white py-20 px-6 text-center">
+   441→        <h2 className="text-4xl font-bold mb-4">{config.ctaTitle}</h2>
+   442→        <p className="text-gray-300 mb-8">{config.ctaSub}</p>
+   443→        <Button size="lg" className="bg-[#16a34a] hover:bg-[#15803d]">Book Your Free Demo</Button>
+   444→      </section>
+   445→    </main>
+   446→  );
+   447→}
+   448→```
+   449→
+   450→STEP 2 — Create the use-case configs:
+   451→File: lib/marketing/use-cases.ts
+   452→
+   453→```ts
+   454→import type { UseCaseConfig } from "@/components/marketing/use-case-page";
+   455→
+   456→export const useCases: Record<string, UseCaseConfig> = {
+   457→  "win-backs": {
+   458→    slug: "win-backs",
+   459→    eyebrow: "Use Case · Win-Backs",
+   460→    headline: "Recover Customers",
+   461→    headlineAccent: "Who Walked Away",
+   462→    subhead: "Re-engage lapsed, churned, or cancelled customers with AI-driven win-back campaigns that actually convert.",
+   463→    seoKeywords: ["win back lapsed customers", "customer reactivation", "churn win-back SaaS", "customer retention AI"],
+   464→    challenges: [
+   465→      "Generic win-back emails get <2% conversion",
+   466→      "High cost of reacquiring a lost customer",
+   467→      "No visibility into who's worth chasing",
+   468→      "Manual outreach doesn't scale past 1,000 customers",
+   469→    ],
+   470→    outcomes: [
+   471→      "3–5x higher win-back rates than email-only",
+   472→      "Score-based prioritization focuses effort on highest-LTV customers",
+   473→      "AI handles the conversation; humans handle escalations",
+   474→      "Measurable recovered revenue per campaign",
+   475→    ],
+   476→    industries: ["Subscriptions", "Retail", "Insurance", "Financial Services", "Education"],
+   477→    ctaTitle: "Turn lost customers into recovered revenue.",
+   478→    ctaSub: "See how 2ndLife win-backs outperform email campaigns by 300%+.",
+   479→  },
+   480→
+   481→  "renewals": {
+   482→    slug: "renewals",
+   483→    eyebrow: "Use Case · Renewals",
+   484→    headline: "Save Every",
+   485→    headlineAccent: "Missed Renewal",
+   486→    subhead: "Prevent and recover missed renewals before they become lost revenue — with proactive, AI-driven outreach.",
+   487→    seoKeywords: ["missed renewals", "policy renewal automation", "subscription renewal recovery", "retention AI"],
+   488→    challenges: [
+   489→      "Renewals slip through the cracks",
+   490→      "Manual renewal reminders feel spammy",
+   491→      "Customers ghost renewal calls",
+   492→      "No visibility into at-risk renewals until it's too late",
+   493→    ],
+   494→    outcomes: [
+   495→      "Catch at-risk renewals 30+ days before expiry",
+   496→      "AI handles renewal conversations at scale",
+   497→      "In-chat payment for immediate reinstatement",
+   498→      "Renewal rate lifted 15–25% on average",
+   499→    ],
+   500→    industries: ["Insurance", "Subscriptions", "Financial Services", "Healthcare"],
+   501→    ctaTitle: "Never miss another renewal.",
+   502→    ctaSub: "Join businesses recovering renewals before they lapse.",
+   503→  },
+   504→
+   505→  "invoices": {
+   506→    slug: "invoices",
+   507→    eyebrow: "Use Case · Unpaid Invoices",
+   508→    headline: "Collect Every",
+   509→    headlineAccent: "Unpaid Invoice",
+   510→    subhead: "Chase overdue invoices professionally and consistently — without burning your accounts team's time.",
+   511→    seoKeywords: ["invoice collection automation", "accounts receivable AI", "debt recovery SaaS", "invoice chasing"],
+   512→    challenges: [
+   513→      "Invoices sit at 30/60/90+ days",
+   514→      "Manual chasing is awkward and time-consuming",
+   515→      "Cash flow tied up in receivables",
+   516→      "No consistent follow-up cadence",
+   517→    ],
+   518→    outcomes: [
+   519→      "Professional, firm-but-respectful AI follow-up",
+   520→      "Score-based prioritization by invoice size and payment likelihood",
+   521→      "In-chat payment links for immediate settlement",
+   522→      "30–50% reduction in days-sales-outstanding",
+   523→    ],
+   524→    industries: ["B2B Services", "Agencies", "Wholesale", "Professional Services"],
+   525→    ctaTitle: "Turn receivables into cash.",
+   526→    ctaSub: "Join businesses collecting overdue invoices 2x faster.",
+   527→  },
+   528→
+   529→  "quotes": {
+   530→    slug: "quotes",
+   531→    eyebrow: "Use Case · Stale Quotes",
+   532→    headline: "Close Every",
+   533→    headlineAccent: "Stale Quote",
+   534→    subhead: "Re-engage prospects whose quotes went unanswered — before they choose a competitor.",
+   535→    seoKeywords: ["quote follow-up automation", "stale proposals", "sales pipeline recovery", "proposal AI"],
+   536→    challenges: [
+   537→      "Proposals sit in prospects' inboxes",
+   538→      "Sales reps deprioritize follow-up for 'new' leads",
+   539→      "No visibility into which quotes are worth chasing",
+   540→      "Deals lost to competitors who followed up faster",
+   541→    ],
+   542→    outcomes: [
+   543→      "AI follows up within 48 hours of quote sent",
+   544→      "Score-based prioritization by deal size and engagement",
+   545→      "Handles objections and books next steps",
+   546→      "15–30% lift in stale quote conversion",
+   547→    ],
+   548→    industries: ["B2B Services", "Agencies", "SaaS", "Professional Services", "Insurance"],
+   549→    ctaTitle: "Close the deals you've already quoted.",
+   550→    ctaSub: "Join sales teams recovering 2–3x more stale quotes.",
+   551→  },
+   552→
+   553→  "failed-payments": {
+   554→    slug: "failed-payments",
+   555→    eyebrow: "Use Case · Failed Payments",
+   556→    headline: "Save Every",
+   557→    headlineAccent: "Failed Payment",
+   558→    subhead: "Recover failed debit orders, expired cards, and payment errors before the customer walks away.",
+   559→    seoKeywords: ["dunning automation", "failed payment recovery", "debit order recovery", "payment retry AI"],
+   560→    challenges: [
+   561→      "Debit orders fail silently",
+   562→      "Cards expire without notice",
+   563→      "Customers churn over payment friction",
+   564→      "Manual retry is expensive and slow",
+   565→    ],
+   566→    outcomes: [
+   567→      "Immediate WhatsApp notification on failed payment",
+   568→      "AI offers alternative payment methods (Instant EFT, new card)",
+   569→      "One-tap restart of payment arrangement",
+   570→      "60–80% of failed payments recovered within 24 hours",
+   571→    ],
+   572→    industries: ["Subscriptions", "Insurance", "Financial Services", "Retail"],
+   573→    ctaTitle: "Turn failed payments into recovered revenue.",
+   574→    ctaSub: "Join businesses recovering 70%+ of failed payments automatically.",
+   575→  },
+   576→};
+   577→
+   578→export const useCaseOrder = ["win-backs", "renewals", "invoices", "quotes", "failed-payments"];
+   579→```
+   580→
+   581→STEP 3 — Register the 5 slugs in the Zustand store's `marketingView` union type.
+   582→Update the "By Use Case" dropdown in the header to link each to `use-case:<slug>`.
+   583→
+   584→STEP 4 — In the main router, when `marketingView` starts with "use-case:", render `<UseCasePage config={useCases[slug]} />`.
+   585→
+   586→STEP 5 — Verify: click each of the 5 use cases from the dropdown, confirm rendering, confirm back button works, lint clean.
+   587→
+   588→REPORT: pages working, commit hash, any issues.
+   589→```
+   590→
+   591→---
+   592→
+   593→## PROMPT 3 — Phase 2: Database + Domain Services
+   594→
+   595→Paste this into GLM 5.2 after Prompts 1 and 2 are verified. This is the real engineering phase.
+   596→
+   597→```text
+   598→Now we move to Phase 2 — Database + Domain Layer.
+   599→This is real backend engineering, not marketing. Follow the NAHALABS Engineering Standard strictly.
+   600→
+   601→GOAL: Build the core database schema and domain services for 2ndLife.
+   602→NO UI changes. NO marketing changes. Services only, with tests.
+   603→
+   604→SCOPE RULES:
+   605→- Build services BEFORE any UI that uses them
+   606→- Every service function takes a `tenantId` and enforces tenant isolation
+   607→- Zod schemas for every input/output
+   608→- Never return raw DB errors — always AppError
+   609→- Every business table gets `tenant_id` and `created_at`/`updated_at`
+   610→- Use `drizzle-kit push` for schema sync (idempotent, simple)
+   611→
+   612→IMPLEMENT EXACTLY:
+   613→
+   614→### 1. Database schema — src/lib/db/schema/index.ts
+   615→
+   616→```ts
+   617→import { pgTable, text, timestamp, integer, numeric, jsonb, boolean, pgEnum, index, unique } from 'drizzle-orm/pg-core';
+   618→
+   619→// Enums
+   620→export const memberRoleEnum = pgEnum('member_role', ['owner', 'admin', 'member']);
+   621→export const recoveryStatusEnum = pgEnum('recovery_status', [
+   622→  'new', 'qualified', 'queued', 'contacted', 'engaged', 'negotiating',
+   623→  'converted', 'recovered', 'declined', 'unresponsive', 'failed', 'suppressed'
+   624→]);
+   625→export const messageRoleEnum = pgEnum('message_role', ['ai', 'customer', 'system']);
+   626→export const paymentStatusEnum = pgEnum('payment_status', ['pending', 'confirmed', 'failed', 'refunded']);
+   627→
+   628→// Core tenant tables
+   629→export const tenants = pgTable('tenants', {
+   630→  id: text('id').primaryKey(),
+   631→  name: text('name').notNull(),
+   632→  industry: text('industry').default('general'),
+   633→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   634→  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+   635→});
+   636→
+   637→export const users = pgTable('users', {
+   638→  id: text('id').primaryKey(),
+   639→  clerkId: text('clerk_id').notNull().unique(),
+   640→  email: text('email').notNull(),
+   641→  name: text('name'),
+   642→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   643→}, (t) => ({ clerkIdx: unique().on(t.clerkId) }));
+   644→
+   645→export const memberships = pgTable('memberships', {
+   646→  id: text('id').primaryKey(),
+   647→  tenantId: text('tenant_id').references(() => tenants.id).notNull(),
+   648→  userId: text('user_id').references(() => users.id).notNull(),
+   649→  role: memberRoleEnum('role').notNull().default('member'),
+   650→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   651→}, (t) => ({ tenantUser: unique().on(t.tenantId, t.userId) }));
+   652→
+   653→// Customer + contact
+   654→export const customers = pgTable('customers', {
+   655→  id: text('id').primaryKey(),
+   656→  tenantId: text('tenant_id').references(() => tenants.id).notNull(),
+   657→  externalId: text('external_id'),
+   658→  firstName: text('first_name'),
+   659→  lastName: text('last_name'),
+   660→  status: text('status').default('active'),
+   661→  lifetimeValue: numeric('lifetime_value', { precision: 14, scale: 2 }),
+   662→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   663→  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+   664→}, (t) => ({ tenantIdx: index().on(t.tenantId) }));
+   665→
+   666→export const customerContacts = pgTable('customer_contacts', {
+   667→  id: text('id').primaryKey(),
+   668→  tenantId: text('tenant_id').references(() => tenants.id).notNull(),
+   669→  customerId: text('customer_id').references(() => customers.id).notNull(),
+   670→  type: text('type').notNull(), // phone, email
+   671→  value: text('value').notNull(),
+   672→  isPrimary: boolean('is_primary').default(false),
+   673→  whatsappValid: boolean('whatsapp_valid').default(false),
+   674→  optOut: boolean('opt_out').default(false),
+   675→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   676→}, (t) => ({ tenantIdx: index().on(t.tenantId) }));
+   677→
+   678→// Recovery opportunity (core domain object)
+   679→export const recoveryOpportunities = pgTable('recovery_opportunities', {
+   680→  id: text('id').primaryKey(),
+   681→  tenantId: text('tenant_id').references(() => tenants.id).notNull(),
+   682→  customerId: text('customer_id').references(() => customers.id).notNull(),
+   683→  sourceRecordId: text('source_record_id'),
+   684→  category: text('category').notNull(), // lapsed_customer, stale_quote, unpaid_invoice, etc.
+   685→  score: integer('score').default(0),
+   686→  estimatedValue: numeric('estimated_value', { precision: 14, scale: 2 }),
+   687→  actualValue: numeric('actual_value', { precision: 14, scale: 2 }),
+   688→  status: recoveryStatusEnum('status').default('new'),
+   689→  reason: jsonb('reason'),
+   690→  recommendedAction: text('recommended_action'),
+   691→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   692→  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+   693→}, (t) => ({ tenantIdx: index().on(t.tenantId), statusIdx: index().on(t.status) }));
+   694→
+   695→// Campaign
+   696→export const campaigns = pgTable('campaigns', {
+   697→  id: text('id').primaryKey(),
+   698→  tenantId: text('tenant_id').references(() => tenants.id).notNull(),
+   699→  name: text('name').notNull(),
+   700→  audienceFilters: jsonb('audience_filters'),
+   701→  channel: text('channel').default('whatsapp'),
+   702→  minScore: integer('min_score').default(0),
+   703→  status: text('status').default('draft'),
+   704→  config: jsonb('config'),
+   705→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   706→  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+   707→}, (t) => ({ tenantIdx: index().on(t.tenantId) }));
+   708→
+   709→// Conversations
+   710→export const conversations = pgTable('conversations', {
+   711→  id: text('id').primaryKey(),
+   712→  tenantId: text('tenant_id').references(() => tenants.id).notNull(),
+   713→  customerId: text('customer_id').references(() => customers.id).notNull(),
+   714→  opportunityId: text('opportunity_id').references(() => recoveryOpportunities.id),
+   715→  campaignId: text('campaign_id').references(() => campaigns.id),
+   716→  channel: text('channel').default('whatsapp'),
+   717→  status: text('status').default('open'),
+   718→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   719→  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+   720→}, (t) => ({ tenantIdx: index().on(t.tenantId) }));
+   721→
+   722→export const conversationMessages = pgTable('conversation_messages', {
+   723→  id: text('id').primaryKey(),
+   724→  tenantId: text('tenant_id').references(() => tenants.id).notNull(),
+   725→  conversationId: text('conversation_id').references(() => conversations.id).notNull(),
+   726→  role: messageRoleEnum('role').notNull(),
+   727→  body: text('body').notNull(),
+   728→  metadata: jsonb('metadata'),
+   729→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   730→}, (t) => ({ tenantIdx: index().on(t.tenantId) }));
+   731→
+   732→// Payments
+   733→export const payments = pgTable('payments', {
+   734→  id: text('id').primaryKey(),
+   735→  tenantId: text('tenant_id').references(() => tenants.id).notNull(),
+   736→  opportunityId: text('opportunity_id').references(() => recoveryOpportunities.id),
+   737→  provider: text('provider').notNull(), // ozow, payfast, stripe
+   738→  providerReference: text('provider_reference').notNull(),
+   739→  amount: numeric('amount', { precision: 14, scale: 2 }).notNull(),
+   740→  currency: text('currency').default('ZAR'),
+   741→  status: paymentStatusEnum('status').default('pending'),
+   742→  webhookPayload: jsonb('webhook_payload'),
+   743→  idempotencyKey: text('idempotency_key').unique(),
+   744→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   745→  confirmedAt: timestamp('confirmed_at'),
+   746→}, (t) => ({ tenantIdx: index().on(t.tenantId), idempotencyIdx: unique().on(t.idempotencyKey) }));
+   747→
+   748→// Audit log (append-only)
+   749→export const auditLogs = pgTable('audit_logs', {
+   750→  id: text('id').primaryKey(),
+   751→  tenantId: text('tenant_id').references(() => tenants.id),
+   752→  userId: text('user_id'),
+   753→  action: text('action').notNull(),
+   754→  entityType: text('entity_type').notNull(),
+   755→  entityId: text('entity_id').notNull(),
+   756→  metadata: jsonb('metadata'),
+   757→  createdAt: timestamp('created_at').defaultNow().notNull(),
+   758→}, (t) => ({ tenantIdx: index().on(t.tenantId) }));
+   759→```
+   760→
+   761→### 2. Domain errors — src/shared/errors/types.ts
+   762→```ts
+   763→export type AppErrorCode = 'NOT_FOUND' | 'UNAUTHORIZED' | 'FORBIDDEN' | 'VALIDATION_ERROR' | 'DATABASE_NOT_CONFIGURED' | 'TENANT_ISOLATION' | 'IDEMPOTENT';
+   764→
+   765→export class AppError extends Error {
+   766→  constructor(public code: AppErrorCode, message: string, public status = 400) {
+   767→    super(message);
+   768→  }
+   769→}
+   770→```
+   771→
+   772→### 3. Tenant isolation helper — src/modules/tenants/tenant-guard.ts
+   773→```ts
+   774→import { eq } from 'drizzle-orm';
+   775→export function tenantWhere<T extends { tenantId: any }>(table: T, tenantId: string) {
+   776→  if (!tenantId) throw new Error('TENANT_ISOLATION: tenantId required');
+   777→  return eq(table.tenantId, tenantId);
+   778→}
+   779→```
+   780→
+   781→### 4. Service pattern example — src/modules/customers/service.ts
+   782→```ts
+   783→import { db } from '@/lib/db';
+   784→import { customers, customerContacts } from '@/lib/db/schema';
+   785→import { eq, and } from 'drizzle-orm';
+   786→import { tenantWhere } from '@/modules/tenants/tenant-guard';
+   787→import { AppError } from '@/shared/errors/types';
+   788→import { z } from 'zod';
+   789→
+   790→export const listCustomersSchema = z.object({ tenantId: z.string(), limit: z.number().min(1).max(100).default(50), offset: z.number().min(0).default(0) });
+   791→export type ListCustomersInput = z.infer<typeof listCustomersSchema>;
+   792→
+   793→export async function listCustomers(input: ListCustomersInput) {
+   794→  if (!db) throw new AppError('DATABASE_NOT_CONFIGURED', 'Database not configured');
+   795→  const { tenantId, limit, offset } = listCustomersSchema.parse(input);
+   796→  const rows = await db.select().from(customers).where(tenantWhere(customers, tenantId)).limit(limit).offset(offset);
+   797→  return rows;
+   798→}
+   799→
+   800→export async function getCustomer(tenantId: string, customerId: string) {
+   801→  if (!db) throw new AppError('DATABASE_NOT_CONFIGURED', 'Database not configured');
+   802→  const row = await db.select().from(customers).where(and(tenantWhere(customers, tenantId), eq(customers.id, customerId))).limit(1);
+   803→  if (!row.length) throw new AppError('NOT_FOUND', 'Customer not found', 404);
+   804→  return row[0];
+   805→}
+   806→```
+   807→
+   808→### 5. Route handler pattern — src/app/api/v1/customers/route.ts
+   809→```ts
+   810→import { NextResponse } from 'next/server';
+   811→import { auth } from '@clerk/nextjs/server';
+   812→import { getTenantContext } from '@/modules/tenants/service';
+   813→import { listCustomers } from '@/modules/customers/service';
+   814→import { AppError } from '@/shared/errors/types';
+   815→
+   816→export const dynamic = 'force-dynamic';
+   817→
+   818→export async function GET(req: Request) {
+   819→  try {
+   820→    const { userId } = await auth();
+   821→    if (!userId) return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } }, { status: 401 });
+   822→    const tenant = await getTenantContext(userId);
+   823→    if (!tenant) return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'No tenant' } }, { status: 404 });
+   824→    const url = new URL(req.url);
+   825→    const rows = await listCustomers({ tenantId: tenant.id, limit: Number(url.searchParams.get('limit') ?? 50), offset: Number(url.searchParams.get('offset') ?? 0) });
+   826→    return NextResponse.json({ data: rows });
+   827→  } catch (err) {
+   828→    if (err instanceof AppError) return NextResponse.json({ error: { code: err.code, message: err.message } }, { status: err.status });
+   829→    console.error('customers GET error', err);
+   830→    return NextResponse.json({ error: { code: 'INTERNAL', message: 'Unexpected error' } }, { status: 500 });
+   831→  }
+   832→}
+   833→```
+   834→
+   835→### 6. Selftest endpoint — src/app/api/v1/selftest/route.ts
+   836→```ts
+   837→import { NextResponse } from 'next/server';
+   838→import { db } from '@/lib/db';
+   839→
+   840→export const dynamic = 'force-dynamic';
+   841→
+   842→export async function GET() {
+   843→  const status = {
+   844→    clerk: !!process.env.CLERK_SECRET_KEY ? 'ok' : 'missing',
+   845→    db: !!process.env.DATABASE_URL ? (db ? 'ok' : 'failed') : 'missing',
+   846→    evolution: !!process.env.EVOLUTION_API_URL ? 'ok' : 'missing',
+   847→    ozow: !!process.env.OZOW_API_KEY ? 'ok' : 'missing',
+   848→  };
+   849→  const healthy = Object.values(status).every(v => v === 'ok' || v === 'missing');
+   850→  return NextResponse.json({ status, healthy }, { status: healthy ? 200 : 503 });
+   851→}
+   852→```
+   853→
+   854→### 7. Tests (Vitest) — src/modules/customers/service.test.ts
+   855→```ts
+   856→import { describe, it, expect, vi } from 'vitest';
+   857→import { getCustomer } from './service';
+   858→
+   859→describe('getCustomer tenant isolation', () => {
+   860→  it('returns customer only for own tenant', async () => {
+   861→    // Mock db to return row for tenant A, empty for tenant B
+   862→    // Test that tenant B gets NOT_FOUND
+   863→    expect(true).toBe(true); // placeholder — implement with vi.mock of db
+   864→  });
+   865→});
+   866→```
+   867→
+   868→ACCEPTANCE:
+   869→- `npm run build` passes with zero env vars
+   870→- `drizzle-kit push` succeeds against Neon (or reports DATABASE_NOT_CONFIGURED cleanly)
+   871→- `/api/v1/selftest` returns structured status 200
+   872→- GET /api/v1/customers unauthenticated → 401
+   873→- Tests pass
+   874→- Lint clean
+   875→
+   876→REPORT: schema applied, services built, tests passing, selftest output, failures, commit hash.
+   877→```
+   878→
+   879→---
+   880→
+   881→Run them in order: **Prompt 1 → verify → Prompt 2 → verify → Prompt 3 → verify**. Each prompt is scoped to one concern, per the NahaLabs one-session-one-scope rule. Say "all done" when complete and I'll write **Phase 3** (imports + customer list UI) next.
