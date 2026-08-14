@@ -1,0 +1,2002 @@
+     1→     1→You are my AI coding assistant and the senior engineer for 2ndLife. I am a vibe coder —
+     2→     2→run everything in the terminal; never ask me to type commands.
+     3→     3→
+     4→     4→READ THESE FIRST (in order), then follow them exactly:
+     5→     5→1. CLAUDE.md (NAHALABS AI SOFTWARE ENGINEERING SYSTEM)
+     6→     6→2. docs/NAHALABS_ENGINEERING_STANDARD.md (v5.0 + amendments: Upstash Redis, MCP Gateway §14,
+     7→     7→   cron-job.org scheduling standard, 20-point pre-launch security checklist, PraisonAI adapter rule)
+     8→     8→3. docs/PRD.md (2ndLife PRD v2 — "Revenue Recovery Intelligence")
+     9→     9→4. Design assets: 2ndLife-logo-exact.png (logo — never redesign), landing-option2.png,
+    10→    10→   dashboard.png (UI source of truth), 2ndlife-screens.html (4 inner-screen mockups),
+    11→    11→   2ndlife-logo.svg (vector master).
+    12→    12→
+    13→    13→GOAL: Phase 0 — REPOSITORY AUDIT ONLY. Produce ARCHITECTURE_AUDIT.md. NO other file
+    14→    14→created, modified, deleted, refactored or renamed. NO code written. NO dependencies installed.
+    15→    15→
+    16→    16→SCOPE RULES:
+    17→    17→- Read existing code before creating anything. Search first, create second.
+    18→    18→- Do NOT create parallel versions of existing files (no *-v2.ts, no duplicate components).
+    19→    19→- Do NOT touch anything outside this task. Do NOT commit secrets (.env, keys, tokens).
+    20→    20→- Stage files explicitly (git add docs/ARCHITECTURE_AUDIT.md only). Never git add .
+    21→    21→- If anything is ambiguous, record it as an open question in the audit — do not guess.
+    22→    22→
+    23→    23→INSPECT AT MINIMUM: package.json · lockfile · src/ (app, modules, lib, shared, components) ·
+    24→    24→database schema/migrations · .env.example vs actual env usage · existing routes & webhooks ·
+    25→    25→existing integrations (Evolution, payments, email) · AI code (provider imports, prompts, tools) ·
+    26→    26→tests & Playwright config · CI workflows · README · docs/.
+    27→    27→
+    28→    28→ARCHITECTURE_AUDIT.md MUST CONTAIN:
+    29→    29→1. Inventory: what exists today, per module, with file paths.
+    30→    30→2. Reuse map: what can be reused as-is vs reworked vs discarded.
+    31→    31→3. PRD module mapping: tenants, users, customers, imports, recovery, campaigns, conversations,
+    32→    32→   messaging, payments, analytics, ai, audit — current state of each (missing/partial/complete).
+    33→    33→4. Standard violations vs NAHALABS_ENGINEERING_STANDARD.md, each with severity and fix plan
+    34→    34→   (check: custom auth? scattered WhatsApp calls? raw provider SDK imports? LangChain? UI→DB
+    35→    35→   access? fat route handlers? un-tenant-scoped tables? unverified webhooks? payments confirmed
+    36→    36→   by redirects? duplicate files? env vars read at module load? missing force-dynamic on auth pages?).
+    37→    37→5. Missing dependencies vs the mandated stack (Next.js App Router, TS strict, Tailwind+shadcn,
+    38→    38→   RHF+Zod, TanStack Query, Clerk, Neon+Drizzle, Vercel AI SDK, Upstash, Vercel Blob, Playwright).
+    39→    39→6. Duplicate/competing components list (Single Authority Rule).
+    40→    40→7. Env contract: every env var referenced, where read, runtime vs build-time; .env.example gaps.
+    41→    41→8. Scheduling assessment (cron-job.org standard): list future jobs ONLY (daily recovery sweep,
+    42→    42→   follow-up processing, payment-failure retry, Evolution keep-warm via GitHub Actions, health
+    43→    43→   check) with endpoint names, frequency, timezone Africa/Johannesburg, auth plan — DO NOT BUILD.
+    44→    44→9. Security gap scan against the 20-point pre-launch checklist (POPIA included).
+    45→    45→10. Risks & technical debt, ranked.
+    46→    46→11. Recommended Phase 1 file plan (exact files to create/edit) so Phase 1 starts clean.
+    47→    47→
+    48→    48→REPORT BACK:
+    49→    49→- Files changed (must be exactly: docs/ARCHITECTURE_AUDIT.md)
+    50→    50→- Build result (npm run build — must remain green/unchanged)
+    51→    51→- New commit hash (single explicit commit)
+    52→    52→- Top 5 risks found
+    53→    53→- Anything requiring manual verification
+    54→    54→Never claim success without verification.. 2ndLife PRD + execution plan. It stays 100% focused on **2ndLife = Revenue Recovery Intelligence**, mandates your NahaLabs stack, and — new in this version — locks your approved Option 2 landing page and dashboard mockups as the **UI source of truth**, adds a concrete scoring model, SA-specific normalization/payment details, and tighter per-phase acceptance criteria. Paste everything between the rules lines into VS Code Copilot.
+    55→    55→
+    56→    56→---
+    57→    57→
+    58→    58→# 2ndLife — Enterprise PRD + Engineering Execution Plan (v2)
+    59→    59→
+    60→    60→**Product:** 2ndLife · **Company:** NahaLabs (Pty) Ltd
+    61→    61→**Positioning:** Revenue Recovery Intelligence
+    62→    62→**Tagline:** *Give your existing revenue a second life.*
+    63→    63→**Companion assets (UI source of truth):** `2ndLife-logo-exact.png` (logo — use exactly as-is, never redesign), `landing-option2.png` (approved marketing site), `dashboard.png` (approved app shell).
+    64→    64→
+    65→    65→## 1. Product Definition
+    66→    66→
+    67→    67→2ndLife is a multi-tenant SaaS platform that finds revenue already inside a business's systems — inactive, stale, abandoned, unpaid or at-risk — and recovers it through intelligent, empathetic workflows (WhatsApp-first).
+    68→    68→
+    69→    69→Core question: *"Who already wanted to buy, pay, renew or continue — and what stopped them?"*
+    70→    70→
+    71→    71→Product loop: **Detect → Prioritize → Engage → Recover → Verify → Measure**
+    72→    72→
+    73→    73→Initial recovery categories: stale leads, abandoned quotes, unconverted opportunities, lapsed customers, missed renewals, unpaid invoices, failed payments, dormant customers, expired offers, at-risk recurring revenue.
+    74→    74→
+    75→    75→## 2. Go-To-Market & Verticals Rule
+    76→    76→
+    77→    77→- **Architecture is horizontal.** No insurance concepts in core modules.
+    78→    78→- **GTM vertical #1 = South African funeral & micro-insurance** (this is what the approved mockups depict). A vertical is a *configuration package* (terminology: policy/premium/lapsed; offer rules; compliance copy), e.g. `src/modules/verticals/funeral-insurance/`, never a fork of core logic.
+    79→    79→- Later segments (subscriptions, financial services, education, healthcare, retail, B2B, professional services) = additional config packages only.
+    80→    80→
+    81→    81→## 3. Brand & Design System (mandatory for all UI work)
+    82→    82→
+    83→    83→- **Logo:** use the provided asset unchanged. Circular green cycle-arrow + "2ndLife" wordmark + "Revenue Recovery Intelligence" tagline.
+    84→    84→- **Tokens (sampled from approved mockups; formalize in Tailwind config):**
+    85→    85→  - `brand-950 #052E22` (hero/footer/sidebar), `brand-800 #0B3D2E`, `primary #16A34A`, `primary-soft #E9F6EE`, `accent-orange #F59E0B`, `ink #0B1220`, `bg #F7F8F9`, cards white.
+    86→    86→- **Type:** Inter/Manrope; bold headings with a green accent span; sentence case; tabular numerals for money; `R` + comma thousands; SA English ("centre", "organisation").
+    87→    87→- **Landing page must keep approved anchors:** headline "Give Your Revenue a Second Life."; 4 benefit bullets; "Secure. Compliant. Built for South African Businesses."; client logo strip; "Every lapsed policy is revenue you've already earned." problem section; "2ndLife Changes That." (WhatsApp AI, Ozow Instant EFT, smart workflows, recover more/spend less); 5 feature cards; 5-step How It Works (Upload → Score & Prioritize → Engage → Collect → Reactivate); testimonial block (R1.2M+ / 38% / 70%); WhatsApp demo chat card; footer with POPIA/Terms/Privacy.
+    88→    88→- **Dashboard principles:** answer 4 questions first (recoverable? recovered? working? needs attention?); KPI cards with 7-day deltas; recovery funnel; operational charts only — no decorative widgets; quick actions; AI-insight strip. **Data-integrity rule: production funnels must be monotonic (each stage ≤ previous); mockup numbers are illustrative only.**
+    89→    89→
+    90→    90→## 4. MVP Scope
+    91→    91→
+    92→    92→**A. Onboarding:** Clerk auth; tenant creation; invitations; Owner/Admin/Member RBAC; business profile; vertical selection.
+    93→    93→
+    94→    94→**B. Import (CSV):** column mapping; validation; preview; error report; dedupe; import history. Normalize SA phones to E.164 (`072 123 4567` → `+27721234567`, use `libphonenumber-js`); validate emails; flag WhatsApp-capable numbers.
+    95→    95→
+    96→    96→**C. Recovery scoring — deterministic, explainable, no LLM:**
+    97→    97→
+    98→    98→| Factor | Weight | Signal |
+    99→    99→|---|---|---|
+   100→   100→| Historical value | 25 | LTV / premium paid |
+   101→   101→| Recency | 20 | days since last activity/lapse |
+   102→   102→| Payment history | 15 | success ratio, failed-debit flags |
+   103→   103→| Contactability | 15 | valid WhatsApp number, email |
+   104→   104→| Offer availability | 10 | product live, rejoin window open |
+   105→   105→| Prior engagement | 10 | responded before, opt-in status |
+   106→   106→| Data completeness | 5 | required fields present |
+   107→   107→
+   108→   108→Output: `score 0–100`, `estimated_value`, `reasons[]`, `risks[]`, `recommended_action`. Same input ⇒ same score (unit-tested).
+   109→   109→
+   110→   110→**D. RecoveryOpportunity (core domain object):**
+   111→   111→
+   112→   112→```ts
+   113→   113→{ id, tenantId, customerId, sourceRecordId, category, score,
+   114→   114→  estimatedValue, status, reason, recommendedAction, createdAt, updatedAt }
+   115→   115→// statuses: new | qualified | queued | contacted | engaged | negotiating
+   116→   116→// | converted | recovered | declined | unresponsive | failed | suppressed
+   117→   117→```
+   118→   118→
+   119→   119→**E. Customer 360:** contact details, score, estimated vs previous value, status, full event timeline (quote → failed payment → messages → replies → offer → payment).
+   120→   120→
+   121→   121→**F. Campaigns:** name, vertical, audience filters, min score, channel, message strategy, send limits, business hours (default Mon–Fri 09:00–17:00 SAST), suppression (opt-outs/DNC/disputed), escalation rules, approved-offer rules, stop conditions.
+   122→   122→
+   123→   123→**G. WhatsApp (primary channel):** Evolution API behind one typed adapter only.
+   124→   124→
+   125→   125→```ts
+   126→   126→interface MessagingProvider { sendMessage(...); sendTemplate(...); getStatus(...) }
+   127→   127→// src/lib/integrations/evolution/ — no WhatsApp calls anywhere else
+   128→   128→```
+   129→   129→
+   130→   130→Inbound webhooks verified + idempotent; messages persisted; delivery states tracked; conversations linked to opportunities.
+   131→   131→
+   132→   132→**H. AI Recovery Agent (Vercel AI SDK):** empathetic revenue-recovery conversations; intent detection; objection handling; presents *approved* options only; triggers payment flow; escalates to human; honours opt-out instantly. Tools (each: authenticate → tenant → authorize → Zod → service → audit):
+   133→   133→
+   134→   134→```text
+   135→   135→customer.get / customer.update / customer.opt_out
+   136→   136→recovery.get_opportunity / recovery.update_status
+   137→   137→campaign.get_context / product.get_available_options / pricing.get_allowed_offer
+   138→   138→payment.create_request / payment.get_status
+   139→   139→conversation.get_history / human.escalate
+   140→   140→```
+   141→   141→
+   142→   142→**Guardrails:** AI may read context/approved offers/payment status; may send messages, create payment requests, update status, escalate, opt out. AI may **never** invent prices/discounts/terms, confirm payments, mark revenue recovered, delete data, bypass limits, ignore opt-outs. **Privacy:** context minimization — only task-relevant fields sent to the model (POPIA by design).
+   143→   143→
+   144→   144→**I. Payments:** `PaymentProvider` abstraction, **Ozow Instant EFT first**. Confirmation **only** via verified, idempotent webhooks: `webhook → verify → persist → PaymentConfirmed → opportunity=recovered → analytics updated`. Browser redirects are never proof of payment.
+   145→   145→
+   146→   146→**J. Attribution:** Contacted / Engaged / Converted / **Recovered (verified only)**. Metrics: pipeline counts, potential vs expected vs actual recovered revenue, recovery & conversion rates, revenue per opportunity, campaign ROI, AI resolution rate, escalation rate, opt-out rate.
+   147→   147→
+   148→   148→**K. Screen inventory (match mockups):** marketing landing; auth; onboarding; import wizard; customers list; Customer 360; opportunities queue; campaigns list + builder; conversations inbox (badge counts); payments; analytics; integrations; settings; dashboard per `dashboard.png`.
+   149→   149→
+   150→   150→## 5. Domain Events
+   151→   151→
+   152→   152→`CustomerImported, RecoveryOpportunityCreated, RecoveryScoreCalculated, CampaignCreated, CampaignStarted, MessageSent, MessageReceived, CustomerEngaged, OfferPresented, PaymentRequested, PaymentConfirmed, RecoveryConverted, RevenueRecovered, ConversationEscalated, CustomerOptedOut` — persisted/auditable.
+   153→   153→
+   154→   154→## 6. Mandatory NahaLabs Stack
+   155→   155→
+   156→   156→Next.js App Router · TypeScript strict · Tailwind + shadcn/ui · React Hook Form + Zod · TanStack Query · Zustand only where needed · Clerk · Neon PostgreSQL + Drizzle · Vercel AI SDK (never raw provider SDKs; no LangChain/LlamaIndex) · Vercel Blob · Upstash Redis · Evolution API on Render · Vercel deploy · Playwright E2E. **No** custom auth, microservices, Kubernetes, or split repos.
+   157→   157→
+   158→   158→**Repository:**
+   159→   159→
+   160→   160→```text
+   161→   161→src/app/(marketing)/ (app)/dashboard customers opportunities campaigns conversations analytics settings
+   162→   162→src/app/api/v1/ webhooks/evolution webhooks/payments jobs/ mcp/[...route]/
+   163→   163→src/modules/ tenants users customers imports recovery campaigns conversations messaging payments analytics ai audit
+   164→   164→src/lib/db/schema queries · lib/integrations/evolution payments · lib/ai/providers tools prompts evals · lib/events security cache
+   165→   165→src/shared/ types validation errors constants
+   166→   166→```
+   167→   167→
+   168→   168→**Database (every business table has `tenant_id`; isolation enforced in the data-access layer; UI never touches DB; route handlers stay thin):** tenants, users, memberships, customers, customer_contacts, customer_events, imports, import_records, import_errors, recovery_opportunities, recovery_scores, recovery_events, campaigns, campaign_members, campaign_events, conversations, conversation_messages, payment_requests, payments, activity_events, audit_logs, ai_conversations, ai_tool_calls, integration_connections, webhook_events.
+   169→   169→
+   170→   170→**MCP (`/api/mcp/[...route]`):** tools `customers.search/get, recovery.list/get, campaigns.list/get, conversations.get, payments.get, analytics.summary, diagnostics.run` through pipeline Clerk → Tenant → RBAC → tool authorization → Zod → service → audit. Never raw DB access.
+   171→   171→
+   172→   172→**Security/POPIA:** server-side authorization, RBAC, Zod everywhere, rate limiting, webhook verification + idempency, audit logs, CSP/HSTS/secure headers, sanitized size-limited uploads, secret management, dependency scanning, consent + opt-out handling, data minimization, retention rules.
+   173→   173→
+   174→   174→## 7. Execution Plan (one phase per Copilot session)
+   175→   175→
+   176→   176→- **Phase 0 — Repo audit.** No code. Produce `ARCHITECTURE_AUDIT.md` (exists / reuse / change / violations / risks). No duplicate files.
+   177→   177→- **Phase 1 — Foundation.** Stack + Clerk + Neon + Drizzle + tenant context + RBAC + errors/logging/headers. *Acceptance: `npm run build` passes with zero env vars.*
+   178→   178→- **Phase 2 — Domain layer.** Services first (Customer/Import/Recovery/Campaign/Conversation/Payment). *Acceptance: unit tests + tenant-isolation test green.*
+   179→   179→- **Phase 3 — Imports + customers.** Mapping, validation, preview, dedupe, E.164 normalization, lists + Customer 360. *Acceptance: realistic SA CSV imports cleanly.*
+   180→   180→- **Phase 4 — Scoring.** Deterministic engine per §4C. *Acceptance: explainability + stability tests green.*
+   181→   181→- **Phase 5 — Campaign engine.** Audience, qualification, preview, start/pause, limits, hours, suppression. *Acceptance: dry-run queue correct; zero messages sent.*
+   182→   182→- **Phase 6 — WhatsApp.** EvolutionAdapter + webhooks + idempotency + persistence. *Acceptance: sandbox send/receive + duplicate-webhook test green.*
+   183→   183→- **Phase 7 — AI agent.** One agent, ToolRegistry, PromptRegistry, guardrails, golden evals. *Acceptance: eval suite passes; hallucination/injection tests green.*
+   184→   184→- **Phase 8 — Payments.** Ozow adapter, verified idempotent webhooks, attribution. *Acceptance: revenue only from verified webhooks (tested).*
+   185→   185→- **Phase 9 — Dashboard + analytics.** Match `dashboard.png`; metrics reconcile with payments table.
+   186→   186→- **Phase 10 — MCP.** Tools + RBAC + audit. *Acceptance: unauthorized tool calls rejected in tests.*
+   187→   187→- **Phase 11 — Testing.** Unit/integration/E2E incl. critical journey: sign up → tenant → import → opportunities → campaign → WhatsApp → AI reply → payment request → webhook → recovered → dashboard updated.
+   188→   188→- **Phase 12 — Hardening.** Full checklist: prod Clerk/Neon/Evolution, migrations, webhook idempotency, rate limits, tenant isolation, AI injection/hallucination, opt-out, POPIA review, audit logs, headers, Vercel prod, Playwright prod, selftest endpoint 200.
+   189→   189→
+   190→   190→## 8. Production Definition of Done
+   191→   191→
+   192→   192→Imports safe ✔ · scores explainable ✔ · WhatsApp reliable ✔ · AI tool-grounded, cannot invent commercial facts ✔ · recovered revenue only from verified webhooks ✔ · tenant A can't see tenant B ✔ · duplicate webhooks cause no duplicate actions ✔ · every recovery action traceable ✔ · critical E2E passes against production ✔ · system can answer *"How much revenue did 2ndLife actually recover?"* ✔
+   193→   193→
+   194→   194→## 9. Copilot Operating Instructions
+   195→   195→
+   196→   196→You are the senior engineer implementing 2ndLife. The PRD above is the product specification; the NahaLabs stack is mandatory. Rules: 1. Don't invent requirements. 2. Don't replace the stack. 3. No microservices unless required. 4. No custom auth. 5. Clerk mandatory. 6. Neon + Drizzle mandatory. 7. Next.js App Router mandatory. 8. TS strict mandatory. 9. Vercel AI SDK only. 10. Never import provider SDKs directly. 11. No LangChain/LlamaIndex. 12. Logic in services, not prompts. 13. UI never touches DB. 14. Thin route handlers. 15. Every business table tenant-scoped. 16. Typed adapter per integration. 17. Webhooks verified + idempotent. 18. Payments confirmed only by verified webhooks. 19. AI never invents prices/status/offers/facts. 20. Destructive actions need explicit authorization. 21. No raw DB access via MCP. 22. No duplicate files (`*-v2.ts`). 23. Search repo before creating. 24. Reuse existing code. 25. No unrelated refactors. 26. Small reviewable changes. 27. Typecheck after meaningful changes. 28. Tests after meaningful changes. 29. Production build before completing a phase. 30. Never claim success without verification. UI work must match the companion design assets exactly (logo unchanged). Method: per phase — inspect repo → list files to change → implement only that phase → validate → report honestly (files changed, decisions, commands, tests, failures, remaining work, readiness). Never build multiple phases in one session. <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+   197→   197→<title>2ndLife — Inner Screen Mockups (Option 2 language)</title>
+   198→   198→<style>
+   199→   199→:root{--ink:#0b1220;--mut:#5c6b64;--bg:#f6f8f7;--card:#fff;--line:#e4eae6;--g900:#0a3b2c;--g:#16a34a;--gd:#15803d;--soft:#e9f6ee;--or:#f59e0b}
+   200→   200→*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}body{margin:0;background:var(--bg);color:var(--ink)}
+   201→   201→h1.cap{max-width:1280px;margin:40px auto 12px;font-size:15px;color:var(--mut);font-weight:600}
+   202→   202→.screen{max-width:1280px;margin:0 auto 48px;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;min-height:760px}
+   203→   203→.side{width:225px;background:var(--g900);color:#cfe5d8;padding:20px 12px;flex-shrink:0}
+   204→   204→.logo{color:#fff;font-weight:800;font-size:19px;margin:0 8px 20px}.logo em{color:var(--g);font-style:normal}
+   205→   205→.side a{display:block;padding:9px 12px;border-radius:10px;color:#cfe5d8;text-decoration:none;font-size:13.5px;margin-bottom:2px}
+   206→   206→.side a.on{background:var(--g);color:#fff;font-weight:600}.side .bd{margin-top:26px;background:#0d4634;border:1px solid #14604a;border-radius:12px;padding:12px;font-size:12px}
+   207→   207→.main{flex:1;padding:24px 28px;min-width:0}h1{font-size:21px;margin:0 0 3px}.sub{color:var(--mut);font-size:13px;margin:0 0 18px}
+   208→   208→.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+   209→   209→.grid{display:grid;gap:14px}.g4{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:2fr 1fr}.g3{grid-template-columns:240px 1fr 280px;flex:1}
+   210→   210→.badge{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600}
+   211→   211→.b-g{background:var(--soft);color:var(--gd)}.b-o{background:#fef3c7;color:#b45309}.b-r{background:#fee2e2;color:#b91c1c}.b-x{background:#eef1f0;color:#475549}
+   212→   212→.btn{background:var(--g);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;font-size:13px;cursor:pointer}
+   213→   213→.btn.gh{background:#fff;color:var(--ink);border:1px solid var(--line)}.btn.dis{opacity:.45}
+   214→   214→table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;color:var(--mut);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;border-bottom:1px solid var(--line)}
+   215→   215→td{padding:9px 10px;border-bottom:1px solid #f0f4f1;vertical-align:top}
+   216→   216→.steps{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}.step{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+   217→   217→.step .n{width:22px;height:22px;border-radius:50%;background:#eef1f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}
+   218→   218→.step.done .n{background:var(--soft);color:var(--gd)}.step.on .n{background:var(--g);color:#fff}.step.on{color:var(--ink);font-weight:600}
+   219→   219→.drop{border:2px dashed #bcd7c6;border-radius:12px;padding:20px;text-align:center;color:var(--mut);background:#fbfefc;font-size:13px}
+   220→   220→.kpi .v{font-size:21px;font-weight:800}.kpi .l{font-size:11.5px;color:var(--mut);margin-bottom:2px}.kpi .d{font-size:11px;color:var(--gd);font-weight:600}
+   221→   221→.bubble{max-width:78%;padding:10px 12px;border-radius:12px;font-size:13px;margin:6px 0;line-height:1.45}
+   222→   222→.ai{background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+   223→   223→.cu{background:#dcfce7;margin-left:auto;border-bottom-right-radius:4px}
+   224→   224→.sys{background:var(--soft);border:1px solid #bfe6cc;border-radius:12px;padding:10px 12px;font-size:12.5px;margin:8px 0}
+   225→   225→.row{padding:10px 12px;border-bottom:1px solid #f0f4f1;font-size:13px;cursor:pointer}.row.on{background:var(--soft);border-left:3px solid var(--g)}
+   226→   226→.tl{border-left:2px solid var(--line);margin:6px 0 6px 6px;padding-left:16px}.tl li{margin:0 0 12px;font-size:13px;list-style:none;position:relative}
+   227→   227→.tl li::before{content:"";position:absolute;left:-21px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--g)}
+   228→   228→.tl li.warn::before{background:var(--or)}.tl li.bad::before{background:#dc2626}
+   229→   229→.chip{display:inline-block;background:#eef1f0;border-radius:8px;padding:4px 8px;font-size:11.5px;margin:0 6px 6px 0}
+   230→   230→.lab{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px}
+   231→   231→input,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px}
+   232→   232→hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+   233→   233→</style></head><body>
+   234→   234→
+   235→   235→<h1 class="cap">SCREEN 1 — /app/imports/new · Import Wizard (Upload → Map → Validate → Preview → Import)</h1>
+   236→   236→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   237→   237→<a>Dashboard</a><a>Campaigns</a><a>Conversations</a><a>Payments</a><a>Policies</a><a>Contacts</a><a class="on">Imports</a><a>Reports</a><a>Integrations</a><a>Settings</a></div>
+   238→   238→<div class="main">
+   239→   239→<h1>New import</h1><p class="sub">Lapsed policies · Funeral insurance vertical · CSV</p>
+   240→   240→<div class="steps"><span class="step done"><span class="n">✓</span>Upload</span><span class="step done"><span class="n">✓</span>Map columns</span><span class="step on"><span class="n">3</span>Validate</span><span class="step"><span class="n">4</span>Preview</span><span class="step"><span class="n">5</span>Import</span></div>
+   241→   241→<div class="grid g2">
+   242→   242→ <div>
+   243→   243→  <div class="drop"><b>lapsed_policies_may.csv</b> · 10,000 rows · 2.1 MB · uploaded 09:41</div>
+   244→   244→  <div class="lab">Column mapping</div>
+   245→   245→  <div class="card" style="padding:6px 10px"><table>
+   246→   246→   <tr><th>CSV column</th><th>2ndLife field</th><th>Rule</th></tr>
+   247→   247→   <tr><td>phone</td><td>Phone</td><td>SA normalize → E.164 (+27…)</td></tr>
+   248→   248→   <tr><td>email</td><td>Email</td><td>Zod email validation</td></tr>
+   249→   249→   <tr><td>amount</td><td>Amount</td><td>ZAR, comma-safe parse</td></tr>
+   250→   250→   <tr><td>status</td><td>Status</td><td>map: "lapsed"/"failed_debit"</td></tr>
+   251→   251→   <tr><td>last_activity</td><td>Last Activity</td><td>ISO date</td></tr>
+   252→   252→   <tr><td colspan="3" style="color:var(--mut)">+6 more mapped (customer_id, names, product, expiry_date, payment_status)</td></tr>
+   253→   253→  </table></div>
+   254→   254→  <div class="lab">Validation</div>
+   255→   255→  <div class="grid g4" style="grid-template-columns:repeat(4,1fr)">
+   256→   256→   <div class="card kpi"><div class="l">Valid rows</div><div class="v">9,412</div></div>
+   257→   257→   <div class="card kpi"><div class="l">Duplicates merged</div><div class="v">388</div></div>
+   258→   258→   <div class="card kpi"><div class="l">Phones normalized</div><div class="v">142</div></div>
+   259→   259→   <div class="card kpi"><div class="l">Errors</div><div class="v" style="color:#b91c1c">58</div></div>
+   260→   260→  </div>
+   261→   261→  <div class="card" style="margin-top:14px;font-size:12.5px;color:var(--mut)">58 rows missing phone → excluded with row-level report (download). Errors never block valid rows.</div>
+   262→   262→ </div>
+   263→   263→ <div>
+   264→   264→  <div class="lab" style="margin-top:0">Preview (normalized)</div>
+   265→   265→  <div class="card" style="padding:6px 10px"><table>
+   266→   266→   <tr><th>Customer</th><th>Phone</th><th>Status</th><th>Amount</th></tr>
+   267→   267→   <tr><td>Thabo Mokoena</td><td>+27721234567</td><td><span class="badge b-o">Lapsed</span></td><td>R4,800</td></tr>
+   268→   268→   <tr><td>Lerato Khumalo</td><td>+27821234567</td><td><span class="badge b-r">Failed debit</span></td><td>R1,950</td></tr>
+   269→   269→   <tr><td>Sipho Dlamini</td><td>+27731234567</td><td><span class="badge b-o">Lapsed</span></td><td>R3,600</td></tr>
+   270→   270→   <tr><td>Palesa Radebe</td><td>+27841234567</td><td><span class="badge b-x">Dormant</span></td><td>R2,400</td></tr>
+   271→   271→  </table></div>
+   272→   272→  <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end"><button class="btn gh">Back</button><button class="btn">Continue to preview →</button></div>
+   273→   273→ </div>
+   274→   274→</div></div></div>
+   275→   275→
+   276→   276→<h1 class="cap">SCREEN 2 — /app/customers/cus_8412 · Customer 360</h1>
+   277→   277→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   278→   278→<a>Dashboard</a><a>Campaigns</a><a>Conversations</a><a>Payments</a><a>Policies</a><a class="on">Contacts</a><a>Imports</a><a>Reports</a><a>Settings</a></div>
+   279→   279→<div class="main">
+   280→   280→<h1>Thabo Mokoena <span class="badge b-o">Lapsed</span> <span class="badge b-g">WhatsApp valid</span> <span class="badge b-x">POPIA consent on file</span></h1>
+   281→   281→<p class="sub">+27721234567 · thabo.m@…co.za · Customer since Mar 2022 · Funeral cover R150/mo</p>
+   282→   282→<div class="grid g4" style="margin-bottom:16px">
+   283→   283→ <div class="card kpi"><div class="l">Recovery score</div><div class="v">87<span style="font-size:12px;color:var(--mut)">/100</span></div><div class="d">Explainable · deterministic</div></div>
+   284→   284→ <div class="card kpi"><div class="l">Estimated recovery</div><div class="v">R4,800</div></div>
+   285→   285→ <div class="card kpi"><div class="l">Previous value</div><div class="v">R7,200</div></div>
+   286→   286→ <div class="card kpi"><div class="l">Inactive</div><div class="v">8 mo</div><div class="d" style="color:#b45309">risk factor −8</div></div>
+   287→   287→</div>
+   288→   288→<div class="grid g2">
+   289→   289→ <div class="card"><div class="lab" style="margin-top:0">Timeline</div>
+   290→   290→  <ul class="tl">
+   291→   291→   <li><b>Quote created</b> · Mar 2022 · R150/mo funeral cover</li>
+   292→   292→   <li><b>Payments normal</b> · 22 on-time payments · R3,300 lifetime</li>
+   293→   293→   <li class="bad"><b>Debit order failed</b> · Jan 2025 · reason: insufficient funds</li>
+   294→   294→   <li class="warn"><b>Policy lapsed</b> · Feb 2025 · no arrears owed</li>
+   295→   295→   <li><b>WhatsApp sent</b> · May 12 · campaign "May Reactivation"</li>
+   296→   296→   <li><b>Customer replied</b> · May 12 · objection: price</li>
+   297→   297→   <li><b>AI conversation</b> · intent detected: restart, price-sensitive</li>
+   298→   298→   <li class="warn"><b>Payment requested</b> · R150.00 via Ozow · awaiting confirmation</li>
+   299→   299→  </ul>
+   300→   300→  <div class="lab">Score reasons</div>
+   301→   301→  <div><span class="chip">+ previously paid</span><span class="chip">+ high historical value</span><span class="chip">+ valid WhatsApp</span><span class="chip">+ offer available</span><span class="chip" style="background:#fef3c7">− inactive 8 months</span></div>
+   302→   302→ </div>
+   303→   303→ <div>
+   304→   304→  <div class="card"><div class="lab" style="margin-top:0">Recommended action</div>
+   305→   305→   <p style="font-size:13px;margin:4px 0 12px">Present approved lower-cost restart offer (R150/mo, no arrears). Empathetic tone; escalate after 2 objections.</p>
+   306→   306→   <button class="btn" style="width:100%">Start WhatsApp conversation</button>
+   307→   307→   <button class="btn gh" style="width:100%;margin-top:8px">Escalate to human</button>
+   308→   308→   <button class="btn gh" style="width:100%;margin-top:8px;color:#b91c1c">Suppress customer</button>
+   309→   309→  </div>
+   310→   310→  <div class="card" style="margin-top:14px;font-size:12px;color:var(--mut)">AI context minimization: only name, product, lapse reason and approved offer band are shared with the model. Full record never leaves tenant storage. <br><br><b>Opt-out:</b> active consent · honoured instantly on reply "STOP".</div>
+   311→   311→ </div>
+   312→   312→</div></div></div>
+   313→   313→
+   314→   314→<h1 class="cap">SCREEN 3 — /app/conversations · AI Recovery Inbox</h1>
+   315→   315→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   316→   316→<a>Dashboard</a><a>Campaigns</a><a class="on">Conversations</a><a>Payments</a><a>Policies</a><a>Contacts</a><a>Reports</a><a>Settings</a></div>
+   317→   317→<div class="main" style="display:flex;flex-direction:column">
+   318→   318→<div style="display:flex;gap:8px;margin-bottom:14px"><span class="badge b-x">All 128</span><span class="badge b-o">Awaiting human 12</span><span class="badge b-g">Engaged 43</span><span class="badge b-r">Opted-out 6</span></div>
+   319→   319→<div class="grid g3" style="flex:1;min-height:0">
+   320→   320→ <div class="card" style="padding:0;overflow:hidden">
+   321→   321→  <div class="row on"><b>Thabo M.</b> <span class="badge b-g">engaged</span><br><span style="color:var(--mut);font-size:12px">score 87 · R4,800 · 2m ago</span></div>
+   322→   322→  <div class="row"><b>Lerato K.</b> <span class="badge b-o">awaiting human</span><br><span style="color:var(--mut);font-size:12px">objection: affordability · 9m</span></div>
+   323→   323→  <div class="row"><b>Sipho D.</b> <span class="badge b-g">recovered</span><br><span style="color:var(--mut);font-size:12px">R150 paid via Ozow · 12m</span></div>
+   324→   324→  <div class="row"><b>Palesa R.</b> <span class="badge b-r">opted-out</span><br><span style="color:var(--mut);font-size:12px">STOP honoured · 1h</span></div>
+   325→   325→ </div>
+   326→   326→ <div class="card" style="overflow:hidden;display:flex;flex-direction:column">
+   327→   327→  <div style="display:flex;justify-content:space-between;font-size:13px"><b>Thabo Mokoena</b><span class="badge b-o">intent: restart · price-sensitive</span></div><hr>
+   328→   328→  <div style="flex:1;overflow:auto;background:#f9fbfa;border-radius:10px;padding:10px">
+   329→   329→   <div class="bubble ai">Hi Thabo, your cover lapsed in Jan. You don't owe arrears. Want to restart for R150/mo?</div>
+   330→   330→   <div class="bubble cu">I stopped because it was too expensive.</div>
+   331→   331→   <div class="bubble ai">I understand. We may be able to look at a lower-cost option. Would you like me to check what is available?</div>
+   332→   332→   <div class="bubble cu">Yes, let's do it!</div>
+   333→   333→   <div class="bubble ai">Great — here is your secure payment request: <b>R150.00 · Ozow Instant EFT</b>. No debit order needed.</div>
+   334→   334→   <div class="sys">✓ <b>Payment Successful</b> · R150.00 paid via Ozow · policy FS-12345 reactivated · webhook verified</div>
+   335→   335→  </div>
+   336→   336→  <div style="margin-top:10px"><input placeholder="Add internal note (human only — never sent to customer)"></div>
+   337→   337→ </div>
+   338→   338→ <div>
+   339→   339→  <div class="card"><div class="lab" style="margin-top:0">Opportunity</div>
+   340→   340→   <table style="font-size:12.5px"><tr><td>Category</td><td><b>Lapsed policy</b></td></tr><tr><td>Score</td><td><b>87</b></td></tr><tr><td>Est. value</td><td><b>R4,800</b></td></tr><tr><td>Recovered</td><td><b>R150</b> (first premium)</td></tr></table></div>
+   341→   341→  <div class="card" style="margin-top:14px"><div class="lab" style="margin-top:0">Guardrails</div>
+   342→   342→   <p style="font-size:12px;color:var(--mut);margin:4px 0">Prices & offers sourced only from <code>pricing.get_allowed_offer</code>. Payment confirmed only by verified Ozow webhook. AI cannot invent facts, delete data or bypass limits.</p>
+   343→   343→   <button class="btn gh" style="width:100%">Take over conversation</button>
+   344→   344→   <button class="btn gh" style="width:100%;margin-top:8px;color:#b91c1c">Record opt-out</button></div>
+   345→   345→ </div>
+   346→   346→</div></div></div>
+   347→   347→
+   348→   348→<h1 class="cap">SCREEN 4 — /app/campaigns/new · Campaign Builder</h1>
+   349→   349→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   350→   350→<a>Dashboard</a><a class="on">Campaigns</a><a>Conversations</a><a>Payments</a><a>Policies</a><a>Contacts</a><a>Reports</a><a>Settings</a></div>
+   351→   351→<div class="main"><div class="grid g2" style="grid-template-columns:1fr 320px">
+   352→   352→ <div>
+   353→   353→  <h1>New campaign</h1><p class="sub">Funeral insurance vertical · WhatsApp channel</p>
+   354→   354→  <div class="card"><div class="lab" style="margin-top:0">1 · Details</div>
+   355→   355→   <input value="August Win-back"> <div style="margin-top:8px"><span class="chip">vertical: funeral-insurance (config package)</span></div></div>
+   356→   356→  <div class="card" style="margin-top:14px"><div class="lab" style="margin-top:0">2 · Audience</div>
+   357→   357→   <div><span class="chip">inactive &gt; 90 days</span><span class="chip">score ≥ 70</span><span class="chip">WhatsApp valid</span><span class="chip">not suppressed</span></div>
+   358→   358→   <div class="grid g2" style="grid-template-columns:1fr 1fr;margin-top:8px">
+   359→   359→    <div class="kpi card"><div class="l">Qualified audience</div><div class="v">1,842</div></div>
+   360→   360→    <div class="kpi card"><div class="l">Est. recoverable</div><div class="v">R3.2M</div></div></div></div>
+   361→   361→  <div class="card" style="margin-top:14px"><div class="lab" style="margin-top:0">3 · Channel & message</div>
+   362→   362→   <div class="bubble ai" style="margin:0">Empathetic reactivation template · acknowledges lapse reason · presents approved offer only · STOP honoured instantly</div></div>
+   363→   363→  <div class="grid g2" style="margin-top:14px">
+   364→   364→   <div class="card"><div class="lab" style="margin-top:0">4 · Limits & hours</div>
+   365→   365→    <table style="font-size:12.5px"><tr><td>Send cap</td><td><b>200 msgs/hour</b></td></tr><tr><td>Business hours</td><td><b>Mon–Fri 09:00–17:00 SAST</b></td></tr><tr><td>Retries</td><td><b>2, 48h apart</b></td></tr></table></div>
+   366→   366→   <div class="card"><div class="lab" style="margin-top:0">5 · Offers & escalation</div>
+   367→   367→    <table style="font-size:12.5px"><tr><td>Offer band</td><td><b>R150/mo restart, no arrears</b></td></tr><tr><td>Escalate</td><td><b>after 2 objections</b></td></tr><tr><td>Auto-stop</td><td><b>opt-out rate &gt; 2%</b></td></tr></table></div>
+   368→   368→  </div>
+   369→   369→ </div>
+   370→   370→ <div>
+   371→   371→  <div class="card" style="position:sticky;top:0">
+   372→   372→   <div class="lab" style="margin-top:0">Review</div>
+   373→   373→   <p style="font-size:13px"><span class="badge b-g">dry-run: ON</span></p>
+   374→   374→   <table style="font-size:12.5px"><tr><td>Audience qualified</td><td>✓</td></tr><tr><td>Suppression applied (6)</td><td>✓</td></tr><tr><td>Template approved</td><td>✓</td></tr><tr><td>Rate limits set</td><td>✓</td></tr><tr><td>Webhook idempotency</td><td>✓</td></tr></table>
+   375→   375→   <hr><button class="btn gh" style="width:100%">Run dry-run</button>
+   376→   376→   <button class="btn dis" style="width:100%;margin-top:8px">Launch campaign</button>
+   377→   377→   <p style="font-size:11.5px;color:var(--mut);margin:10px 0 0">Launch unlocks only after a passing dry-run. No real WhatsApp messages are sent until then.</p>
+   378→   378→  </div>
+   379→   379→ </div>
+   380→   380→</div></div></div>
+   381→   381→</body></html>, <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 220" role="img" aria-label="2ndLife — Revenue Recovery Intelligence">
+   382→   382→  <!-- Variant usage:  dark bg → style="color:#fff"  |  light bg → style="color:#052e22"
+   383→   383→       Monochrome: change the two mark fills below to currentColor -->
+   384→   384→  <g id="mark"><!-- circular recovery arrow -->
+   385→   385→    <circle cx="110" cy="105" r="78" fill="none" stroke="#16a34a" stroke-width="16"
+   386→   386→            stroke-linecap="round" stroke-dasharray="402 88" transform="rotate(-52 110 105)"/>
+   387→   387→    <path d="M148 12 L192 30 L150 52 Z" fill="#16a34a"/>
+   388→   388→  </g>
+   389→   389→  <g id="wordmark" fill="currentColor" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-weight="800">
+   390→   390→    <text x="70" y="128" font-size="76">2</text>
+   391→   391→    <text x="116" y="128" font-size="46">nd</text>
+   392→   392→    <text x="205" y="128" font-size="76">Life</text>
+   393→   393→  </g>
+   394→   394→  <text x="208" y="163" font-family="Inter, Arial, sans-serif" font-size="15" letter-spacing="3.2"
+   395→   395→        fill="currentColor" opacity="0.72">REVENUE RECOVERY INTELLIGENCE</text>
+   396→   396→</svg> ,# e.g. 2000px wide for 4K timelines
+   397→   397→npx --yes @resvg/resvg-cli 2ndlife-logo.svg logo@2000.png --width 2000
+   398→   398→# or: rsvg-convert -w 2000 -o logo@2000.png 2ndlife-logo.svg, All three deliverables below. First, the skills I applied/recommend (verified live): Anthropic's official **frontend-design** skill (distinctive, intentional UI; no default blue/purple gradients; semantic color; accessibility) [[2]], **ui-ux-pro-max** for design-system/accessibility review [[10]], a **design-review** skill for WCAG audits [[12]], and for the logo pack the **logo-designer / svg-logo-designer** pattern (production-ready SVG, iterative refinement) [[17]]. Note: VS Code Copilot doesn't auto-load Claude Code skills, so I've baked the relevant skill rules directly into the prompts and mockups.
+   399→   399→
+   400→   400→---
+   401→   401→
+   402→   402→## Deliverable 1 — The literal Phase 0 prompt (paste into VS Code Copilot first)
+   403→   403→
+   404→   404→```text
+   405→   405→You are my AI coding assistant and the senior engineer for 2ndLife. I am a vibe coder —
+   406→   406→run everything in the terminal; never ask me to type commands.
+   407→   407→
+   408→   408→READ THESE FIRST (in order), then follow them exactly:
+   409→   409→1. CLAUDE.md (NAHALABS AI SOFTWARE ENGINEERING SYSTEM)
+   410→   410→2. docs/NAHALABS_ENGINEERING_STANDARD.md (v5.0 + amendments: Upstash Redis, MCP Gateway §14,
+   411→   411→   cron-job.org scheduling standard, 20-point pre-launch security checklist, PraisonAI adapter rule)
+   412→   412→3. docs/PRD.md (2ndLife PRD v2 — "Revenue Recovery Intelligence")
+   413→   413→4. Design assets: 2ndLife-logo-exact.png (logo — never redesign), landing-option2.png,
+   414→   414→   dashboard.png (UI source of truth), 2ndlife-screens.html (4 inner-screen mockups),
+   415→   415→   2ndlife-logo.svg (vector master).
+   416→   416→
+   417→   417→GOAL: Phase 0 — REPOSITORY AUDIT ONLY. Produce ARCHITECTURE_AUDIT.md. NO other file
+   418→   418→created, modified, deleted, refactored or renamed. NO code written. NO dependencies installed.
+   419→   419→
+   420→   420→SCOPE RULES:
+   421→   421→- Read existing code before creating anything. Search first, create second.
+   422→   422→- Do NOT create parallel versions of existing files (no *-v2.ts, no duplicate components).
+   423→   423→- Do NOT touch anything outside this task. Do NOT commit secrets (.env, keys, tokens).
+   424→   424→- Stage files explicitly (git add docs/ARCHITECTURE_AUDIT.md only). Never git add .
+   425→   425→- If anything is ambiguous, record it as an open question in the audit — do not guess.
+   426→   426→
+   427→   427→INSPECT AT MINIMUM: package.json · lockfile · src/ (app, modules, lib, shared, components) ·
+   428→   428→database schema/migrations · .env.example vs actual env usage · existing routes & webhooks ·
+   429→   429→existing integrations (Evolution, payments, email) · AI code (provider imports, prompts, tools) ·
+   430→   430→tests & Playwright config · CI workflows · README · docs/.
+   431→   431→
+   432→   432→ARCHITECTURE_AUDIT.md MUST CONTAIN:
+   433→   433→1. Inventory: what exists today, per module, with file paths.
+   434→   434→2. Reuse map: what can be reused as-is vs reworked vs discarded.
+   435→   435→3. PRD module mapping: tenants, users, customers, imports, recovery, campaigns, conversations,
+   436→   436→   messaging, payments, analytics, ai, audit — current state of each (missing/partial/complete).
+   437→   437→4. Standard violations vs NAHALABS_ENGINEERING_STANDARD.md, each with severity and fix plan
+   438→   438→   (check: custom auth? scattered WhatsApp calls? raw provider SDK imports? LangChain? UI→DB
+   439→   439→   access? fat route handlers? un-tenant-scoped tables? unverified webhooks? payments confirmed
+   440→   440→   by redirects? duplicate files? env vars read at module load? missing force-dynamic on auth pages?).
+   441→   441→5. Missing dependencies vs the mandated stack (Next.js App Router, TS strict, Tailwind+shadcn,
+   442→   442→   RHF+Zod, TanStack Query, Clerk, Neon+Drizzle, Vercel AI SDK, Upstash, Vercel Blob, Playwright).
+   443→   443→6. Duplicate/competing components list (Single Authority Rule).
+   444→   444→7. Env contract: every env var referenced, where read, runtime vs build-time; .env.example gaps.
+   445→   445→8. Scheduling assessment (cron-job.org standard): list future jobs ONLY (daily recovery sweep,
+   446→   446→   follow-up processing, payment-failure retry, Evolution keep-warm via GitHub Actions, health
+   447→   447→   check) with endpoint names, frequency, timezone Africa/Johannesburg, auth plan — DO NOT BUILD.
+   448→   448→9. Security gap scan against the 20-point pre-launch checklist (POPIA included).
+   449→   449→10. Risks & technical debt, ranked.
+   450→   450→11. Recommended Phase 1 file plan (exact files to create/edit) so Phase 1 starts clean.
+   451→   451→
+   452→   452→REPORT BACK:
+   453→   453→- Files changed (must be exactly: docs/ARCHITECTURE_AUDIT.md)
+   454→   454→- Build result (npm run build — must remain green/unchanged)
+   455→   455→- New commit hash (single explicit commit)
+   456→   456→- Top 5 risks found
+   457→   457→- Anything requiring manual verification
+   458→   458→Never claim success without verification.
+   459→   459→```
+   460→   460→
+   461→   461→---
+   462→   462→
+   463→   463→## Deliverable 2 — The 4 remaining hi-fi screens (single-file mockup)
+   464→   464→
+   465→   465→Save as `2ndlife-screens.html`. It renders 4 screens in the approved Option 2 language (dark-green rail, green/orange semantics, Inter, white cards) — open in a browser and screenshot for pitch/promo use. These are **alignment mockups only**; production screens are built in shadcn per the PRD.
+   466→   466→
+   467→   467→```html
+   468→   468→<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+   469→   469→<title>2ndLife — Inner Screen Mockups (Option 2 language)</title>
+   470→   470→<style>
+   471→   471→:root{--ink:#0b1220;--mut:#5c6b64;--bg:#f6f8f7;--card:#fff;--line:#e4eae6;--g900:#0a3b2c;--g:#16a34a;--gd:#15803d;--soft:#e9f6ee;--or:#f59e0b}
+   472→   472→*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}body{margin:0;background:var(--bg);color:var(--ink)}
+   473→   473→h1.cap{max-width:1280px;margin:40px auto 12px;font-size:15px;color:var(--mut);font-weight:600}
+   474→   474→.screen{max-width:1280px;margin:0 auto 48px;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;min-height:760px}
+   475→   475→.side{width:225px;background:var(--g900);color:#cfe5d8;padding:20px 12px;flex-shrink:0}
+   476→   476→.logo{color:#fff;font-weight:800;font-size:19px;margin:0 8px 20px}.logo em{color:var(--g);font-style:normal}
+   477→   477→.side a{display:block;padding:9px 12px;border-radius:10px;color:#cfe5d8;text-decoration:none;font-size:13.5px;margin-bottom:2px}
+   478→   478→.side a.on{background:var(--g);color:#fff;font-weight:600}.side .bd{margin-top:26px;background:#0d4634;border:1px solid #14604a;border-radius:12px;padding:12px;font-size:12px}
+   479→   479→.main{flex:1;padding:24px 28px;min-width:0}h1{font-size:21px;margin:0 0 3px}.sub{color:var(--mut);font-size:13px;margin:0 0 18px}
+   480→   480→.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+   481→   481→.grid{display:grid;gap:14px}.g4{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:2fr 1fr}.g3{grid-template-columns:240px 1fr 280px;flex:1}
+   482→   482→.badge{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600}
+   483→   483→.b-g{background:var(--soft);color:var(--gd)}.b-o{background:#fef3c7;color:#b45309}.b-r{background:#fee2e2;color:#b91c1c}.b-x{background:#eef1f0;color:#475549}
+   484→   484→.btn{background:var(--g);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;font-size:13px;cursor:pointer}
+   485→   485→.btn.gh{background:#fff;color:var(--ink);border:1px solid var(--line)}.btn.dis{opacity:.45}
+   486→   486→table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;color:var(--mut);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;border-bottom:1px solid var(--line)}
+   487→   487→td{padding:9px 10px;border-bottom:1px solid #f0f4f1;vertical-align:top}
+   488→   488→.steps{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}.step{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+   489→   489→.step .n{width:22px;height:22px;border-radius:50%;background:#eef1f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}
+   490→   490→.step.done .n{background:var(--soft);color:var(--gd)}.step.on .n{background:var(--g);color:#fff}.step.on{color:var(--ink);font-weight:600}
+   491→   491→.drop{border:2px dashed #bcd7c6;border-radius:12px;padding:20px;text-align:center;color:var(--mut);background:#fbfefc;font-size:13px}
+   492→   492→.kpi .v{font-size:21px;font-weight:800}.kpi .l{font-size:11.5px;color:var(--mut);margin-bottom:2px}.kpi .d{font-size:11px;color:var(--gd);font-weight:600}
+   493→   493→.bubble{max-width:78%;padding:10px 12px;border-radius:12px;font-size:13px;margin:6px 0;line-height:1.45}
+   494→   494→.ai{background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+   495→   495→.cu{background:#dcfce7;margin-left:auto;border-bottom-right-radius:4px}
+   496→   496→.sys{background:var(--soft);border:1px solid #bfe6cc;border-radius:12px;padding:10px 12px;font-size:12.5px;margin:8px 0}
+   497→   497→.row{padding:10px 12px;border-bottom:1px solid #f0f4f1;font-size:13px;cursor:pointer}.row.on{background:var(--soft);border-left:3px solid var(--g)}
+   498→   498→.tl{border-left:2px solid var(--line);margin:6px 0 6px 6px;padding-left:16px}.tl li{margin:0 0 12px;font-size:13px;list-style:none;position:relative}
+   499→   499→.tl li::before{content:"";position:absolute;left:-21px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--g)}
+   500→   500→.tl li.warn::before{background:var(--or)}.tl li.bad::before{background:#dc2626}
+   501→   501→.chip{display:inline-block;background:#eef1f0;border-radius:8px;padding:4px 8px;font-size:11.5px;margin:0 6px 6px 0}
+   502→   502→.lab{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px}
+   503→   503→input,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px}
+   504→   504→hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+   505→   505→</style></head><body>
+   506→   506→
+   507→   507→<h1 class="cap">SCREEN 1 — /app/imports/new · Import Wizard (Upload → Map → Validate → Preview → Import)</h1>
+   508→   508→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   509→   509→<a>Dashboard</a><a>Campaigns</a><a>Conversations</a><a>Payments</a><a>Policies</a><a>Contacts</a><a class="on">Imports</a><a>Reports</a><a>Integrations</a><a>Settings</a></div>
+   510→   510→<div class="main">
+   511→   511→<h1>New import</h1><p class="sub">Lapsed policies · Funeral insurance vertical · CSV</p>
+   512→   512→<div class="steps"><span class="step done"><span class="n">✓</span>Upload</span><span class="step done"><span class="n">✓</span>Map columns</span><span class="step on"><span class="n">3</span>Validate</span><span class="step"><span class="n">4</span>Preview</span><span class="step"><span class="n">5</span>Import</span></div>
+   513→   513→<div class="grid g2">
+   514→   514→ <div>
+   515→   515→  <div class="drop"><b>lapsed_policies_may.csv</b> · 10,000 rows · 2.1 MB · uploaded 09:41</div>
+   516→   516→  <div class="lab">Column mapping</div>
+   517→   517→  <div class="card" style="padding:6px 10px"><table>
+   518→   518→   <tr><th>CSV column</th><th>2ndLife field</th><th>Rule</th></tr>
+   519→   519→   <tr><td>phone</td><td>Phone</td><td>SA normalize → E.164 (+27…)</td></tr>
+   520→   520→   <tr><td>email</td><td>Email</td><td>Zod email validation</td></tr>
+   521→   521→   <tr><td>amount</td><td>Amount</td><td>ZAR, comma-safe parse</td></tr>
+   522→   522→   <tr><td>status</td><td>Status</td><td>map: "lapsed"/"failed_debit"</td></tr>
+   523→   523→   <tr><td>last_activity</td><td>Last Activity</td><td>ISO date</td></tr>
+   524→   524→   <tr><td colspan="3" style="color:var(--mut)">+6 more mapped (customer_id, names, product, expiry_date, payment_status)</td></tr>
+   525→   525→  </table></div>
+   526→   526→  <div class="lab">Validation</div>
+   527→   527→  <div class="grid g4" style="grid-template-columns:repeat(4,1fr)">
+   528→   528→   <div class="card kpi"><div class="l">Valid rows</div><div class="v">9,412</div></div>
+   529→   529→   <div class="card kpi"><div class="l">Duplicates merged</div><div class="v">388</div></div>
+   530→   530→   <div class="card kpi"><div class="l">Phones normalized</div><div class="v">142</div></div>
+   531→   531→   <div class="card kpi"><div class="l">Errors</div><div class="v" style="color:#b91c1c">58</div></div>
+   532→   532→  </div>
+   533→   533→  <div class="card" style="margin-top:14px;font-size:12.5px;color:var(--mut)">58 rows missing phone → excluded with row-level report (download). Errors never block valid rows.</div>
+   534→   534→ </div>
+   535→   535→ <div>
+   536→   536→  <div class="lab" style="margin-top:0">Preview (normalized)</div>
+   537→   537→  <div class="card" style="padding:6px 10px"><table>
+   538→   538→   <tr><th>Customer</th><th>Phone</th><th>Status</th><th>Amount</th></tr>
+   539→   539→   <tr><td>Thabo Mokoena</td><td>+27721234567</td><td><span class="badge b-o">Lapsed</span></td><td>R4,800</td></tr>
+   540→   540→   <tr><td>Lerato Khumalo</td><td>+27821234567</td><td><span class="badge b-r">Failed debit</span></td><td>R1,950</td></tr>
+   541→   541→   <tr><td>Sipho Dlamini</td><td>+27731234567</td><td><span class="badge b-o">Lapsed</span></td><td>R3,600</td></tr>
+   542→   542→   <tr><td>Palesa Radebe</td><td>+27841234567</td><td><span class="badge b-x">Dormant</span></td><td>R2,400</td></tr>
+   543→   543→  </table></div>
+   544→   544→  <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end"><button class="btn gh">Back</button><button class="btn">Continue to preview →</button></div>
+   545→   545→ </div>
+   546→   546→</div></div></div>
+   547→   547→
+   548→   548→<h1 class="cap">SCREEN 2 — /app/customers/cus_8412 · Customer 360</h1>
+   549→   549→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   550→   550→<a>Dashboard</a><a>Campaigns</a><a>Conversations</a><a>Payments</a><a>Policies</a><a class="on">Contacts</a><a>Imports</a><a>Reports</a><a>Settings</a></div>
+   551→   551→<div class="main">
+   552→   552→<h1>Thabo Mokoena <span class="badge b-o">Lapsed</span> <span class="badge b-g">WhatsApp valid</span> <span class="badge b-x">POPIA consent on file</span></h1>
+   553→   553→<p class="sub">+27721234567 · thabo.m@…co.za · Customer since Mar 2022 · Funeral cover R150/mo</p>
+   554→   554→<div class="grid g4" style="margin-bottom:16px">
+   555→   555→ <div class="card kpi"><div class="l">Recovery score</div><div class="v">87<span style="font-size:12px;color:var(--mut)">/100</span></div><div class="d">Explainable · deterministic</div></div>
+   556→   556→ <div class="card kpi"><div class="l">Estimated recovery</div><div class="v">R4,800</div></div>
+   557→   557→ <div class="card kpi"><div class="l">Previous value</div><div class="v">R7,200</div></div>
+   558→   558→ <div class="card kpi"><div class="l">Inactive</div><div class="v">8 mo</div><div class="d" style="color:#b45309">risk factor −8</div></div>
+   559→   559→</div>
+   560→   560→<div class="grid g2">
+   561→   561→ <div class="card"><div class="lab" style="margin-top:0">Timeline</div>
+   562→   562→  <ul class="tl">
+   563→   563→   <li><b>Quote created</b> · Mar 2022 · R150/mo funeral cover</li>
+   564→   564→   <li><b>Payments normal</b> · 22 on-time payments · R3,300 lifetime</li>
+   565→   565→   <li class="bad"><b>Debit order failed</b> · Jan 2025 · reason: insufficient funds</li>
+   566→   566→   <li class="warn"><b>Policy lapsed</b> · Feb 2025 · no arrears owed</li>
+   567→   567→   <li><b>WhatsApp sent</b> · May 12 · campaign "May Reactivation"</li>
+   568→   568→   <li><b>Customer replied</b> · May 12 · objection: price</li>
+   569→   569→   <li><b>AI conversation</b> · intent detected: restart, price-sensitive</li>
+   570→   570→   <li class="warn"><b>Payment requested</b> · R150.00 via Ozow · awaiting confirmation</li>
+   571→   571→  </ul>
+   572→   572→  <div class="lab">Score reasons</div>
+   573→   573→  <div><span class="chip">+ previously paid</span><span class="chip">+ high historical value</span><span class="chip">+ valid WhatsApp</span><span class="chip">+ offer available</span><span class="chip" style="background:#fef3c7">− inactive 8 months</span></div>
+   574→   574→ </div>
+   575→   575→ <div>
+   576→   576→  <div class="card"><div class="lab" style="margin-top:0">Recommended action</div>
+   577→   577→   <p style="font-size:13px;margin:4px 0 12px">Present approved lower-cost restart offer (R150/mo, no arrears). Empathetic tone; escalate after 2 objections.</p>
+   578→   578→   <button class="btn" style="width:100%">Start WhatsApp conversation</button>
+   579→   579→   <button class="btn gh" style="width:100%;margin-top:8px">Escalate to human</button>
+   580→   580→   <button class="btn gh" style="width:100%;margin-top:8px;color:#b91c1c">Suppress customer</button>
+   581→   581→  </div>
+   582→   582→  <div class="card" style="margin-top:14px;font-size:12px;color:var(--mut)">AI context minimization: only name, product, lapse reason and approved offer band are shared with the model. Full record never leaves tenant storage. <br><br><b>Opt-out:</b> active consent · honoured instantly on reply "STOP".</div>
+   583→   583→ </div>
+   584→   584→</div></div></div>
+   585→   585→
+   586→   586→<h1 class="cap">SCREEN 3 — /app/conversations · AI Recovery Inbox</h1>
+   587→   587→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   588→   588→<a>Dashboard</a><a>Campaigns</a><a class="on">Conversations</a><a>Payments</a><a>Policies</a><a>Contacts</a><a>Reports</a><a>Settings</a></div>
+   589→   589→<div class="main" style="display:flex;flex-direction:column">
+   590→   590→<div style="display:flex;gap:8px;margin-bottom:14px"><span class="badge b-x">All 128</span><span class="badge b-o">Awaiting human 12</span><span class="badge b-g">Engaged 43</span><span class="badge b-r">Opted-out 6</span></div>
+   591→   591→<div class="grid g3" style="flex:1;min-height:0">
+   592→   592→ <div class="card" style="padding:0;overflow:hidden">
+   593→   593→  <div class="row on"><b>Thabo M.</b> <span class="badge b-g">engaged</span><br><span style="color:var(--mut);font-size:12px">score 87 · R4,800 · 2m ago</span></div>
+   594→   594→  <div class="row"><b>Lerato K.</b> <span class="badge b-o">awaiting human</span><br><span style="color:var(--mut);font-size:12px">objection: affordability · 9m</span></div>
+   595→   595→  <div class="row"><b>Sipho D.</b> <span class="badge b-g">recovered</span><br><span style="color:var(--mut);font-size:12px">R150 paid via Ozow · 12m</span></div>
+   596→   596→  <div class="row"><b>Palesa R.</b> <span class="badge b-r">opted-out</span><br><span style="color:var(--mut);font-size:12px">STOP honoured · 1h</span></div>
+   597→   597→ </div>
+   598→   598→ <div class="card" style="overflow:hidden;display:flex;flex-direction:column">
+   599→   599→  <div style="display:flex;justify-content:space-between;font-size:13px"><b>Thabo Mokoena</b><span class="badge b-o">intent: restart · price-sensitive</span></div><hr>
+   600→   600→  <div style="flex:1;overflow:auto;background:#f9fbfa;border-radius:10px;padding:10px">
+   601→   601→   <div class="bubble ai">Hi Thabo, your cover lapsed in Jan. You don't owe arrears. Want to restart for R150/mo?</div>
+   602→   602→   <div class="bubble cu">I stopped because it was too expensive.</div>
+   603→   603→   <div class="bubble ai">I understand. We may be able to look at a lower-cost option. Would you like me to check what is available?</div>
+   604→   604→   <div class="bubble cu">Yes, let's do it!</div>
+   605→   605→   <div class="bubble ai">Great — here is your secure payment request: <b>R150.00 · Ozow Instant EFT</b>. No debit order needed.</div>
+   606→   606→   <div class="sys">✓ <b>Payment Successful</b> · R150.00 paid via Ozow · policy FS-12345 reactivated · webhook verified</div>
+   607→   607→  </div>
+   608→   608→  <div style="margin-top:10px"><input placeholder="Add internal note (human only — never sent to customer)"></div>
+   609→   609→ </div>
+   610→   610→ <div>
+   611→   611→  <div class="card"><div class="lab" style="margin-top:0">Opportunity</div>
+   612→   612→   <table style="font-size:12.5px"><tr><td>Category</td><td><b>Lapsed policy</b></td></tr><tr><td>Score</td><td><b>87</b></td></tr><tr><td>Est. value</td><td><b>R4,800</b></td></tr><tr><td>Recovered</td><td><b>R150</b> (first premium)</td></tr></table></div>
+   613→   613→  <div class="card" style="margin-top:14px"><div class="lab" style="margin-top:0">Guardrails</div>
+   614→   614→   <p style="font-size:12px;color:var(--mut);margin:4px 0">Prices & offers sourced only from <code>pricing.get_allowed_offer</code>. Payment confirmed only by verified Ozow webhook. AI cannot invent facts, delete data or bypass limits.</p>
+   615→   615→   <button class="btn gh" style="width:100%">Take over conversation</button>
+   616→   616→   <button class="btn gh" style="width:100%;margin-top:8px;color:#b91c1c">Record opt-out</button></div>
+   617→   617→ </div>
+   618→   618→</div></div></div>
+   619→   619→
+   620→   620→<h1 class="cap">SCREEN 4 — /app/campaigns/new · Campaign Builder</h1>
+   621→   621→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   622→   622→<a>Dashboard</a><a class="on">Campaigns</a><a>Conversations</a><a>Payments</a><a>Policies</a><a>Contacts</a><a>Reports</a><a>Settings</a></div>
+   623→   623→<div class="main"><div class="grid g2" style="grid-template-columns:1fr 320px">
+   624→   624→ <div>
+   625→   625→  <h1>New campaign</h1><p class="sub">Funeral insurance vertical · WhatsApp channel</p>
+   626→   626→  <div class="card"><div class="lab" style="margin-top:0">1 · Details</div>
+   627→   627→   <input value="August Win-back"> <div style="margin-top:8px"><span class="chip">vertical: funeral-insurance (config package)</span></div></div>
+   628→   628→  <div class="card" style="margin-top:14px"><div class="lab" style="margin-top:0">2 · Audience</div>
+   629→   629→   <div><span class="chip">inactive &gt; 90 days</span><span class="chip">score ≥ 70</span><span class="chip">WhatsApp valid</span><span class="chip">not suppressed</span></div>
+   630→   630→   <div class="grid g2" style="grid-template-columns:1fr 1fr;margin-top:8px">
+   631→   631→    <div class="kpi card"><div class="l">Qualified audience</div><div class="v">1,842</div></div>
+   632→   632→    <div class="kpi card"><div class="l">Est. recoverable</div><div class="v">R3.2M</div></div></div></div>
+   633→   633→  <div class="card" style="margin-top:14px"><div class="lab" style="margin-top:0">3 · Channel & message</div>
+   634→   634→   <div class="bubble ai" style="margin:0">Empathetic reactivation template · acknowledges lapse reason · presents approved offer only · STOP honoured instantly</div></div>
+   635→   635→  <div class="grid g2" style="margin-top:14px">
+   636→   636→   <div class="card"><div class="lab" style="margin-top:0">4 · Limits & hours</div>
+   637→   637→    <table style="font-size:12.5px"><tr><td>Send cap</td><td><b>200 msgs/hour</b></td></tr><tr><td>Business hours</td><td><b>Mon–Fri 09:00–17:00 SAST</b></td></tr><tr><td>Retries</td><td><b>2, 48h apart</b></td></tr></table></div>
+   638→   638→   <div class="card"><div class="lab" style="margin-top:0">5 · Offers & escalation</div>
+   639→   639→    <table style="font-size:12.5px"><tr><td>Offer band</td><td><b>R150/mo restart, no arrears</b></td></tr><tr><td>Escalate</td><td><b>after 2 objections</b></td></tr><tr><td>Auto-stop</td><td><b>opt-out rate &gt; 2%</b></td></tr></table></div>
+   640→   640→  </div>
+   641→   641→ </div>
+   642→   642→ <div>
+   643→   643→  <div class="card" style="position:sticky;top:0">
+   644→   644→   <div class="lab" style="margin-top:0">Review</div>
+   645→   645→   <p style="font-size:13px"><span class="badge b-g">dry-run: ON</span></p>
+   646→   646→   <table style="font-size:12.5px"><tr><td>Audience qualified</td><td>✓</td></tr><tr><td>Suppression applied (6)</td><td>✓</td></tr><tr><td>Template approved</td><td>✓</td></tr><tr><td>Rate limits set</td><td>✓</td></tr><tr><td>Webhook idempotency</td><td>✓</td></tr></table>
+   647→   647→   <hr><button class="btn gh" style="width:100%">Run dry-run</button>
+   648→   648→   <button class="btn dis" style="width:100%;margin-top:8px">Launch campaign</button>
+   649→   649→   <p style="font-size:11.5px;color:var(--mut);margin:10px 0 0">Launch unlocks only after a passing dry-run. No real WhatsApp messages are sent until then.</p>
+   650→   650→  </div>
+   651→   651→ </div>
+   652→   652→</div></div></div>
+   653→   653→</body></html>
+   654→   654→```
+   655→   655→
+   656→   656→---
+   657→   657→
+   658→   658→## Deliverable 3 — Logo pack (vector master, transparent, infinitely scalable)
+   659→   659→
+   660→   660→Save as `2ndlife-logo.svg`. Vector = lossless upscale for promo videos; transparent by default. The wordmark/tagline use `currentColor`, so one file gives you every variant: wrap in white text on dark footage, deep-green on light footage. The pixel-exact crop (`2ndLife-logo-exact.png`) remains the raster source of truth; this is the scalable master.
+   661→   661→
+   662→   662→```svg
+   663→   663→<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 220" role="img" aria-label="2ndLife — Revenue Recovery Intelligence">
+   664→   664→  <!-- Variant usage:  dark bg → style="color:#fff"  |  light bg → style="color:#052e22"
+   665→   665→       Monochrome: change the two mark fills below to currentColor -->
+   666→   666→  <g id="mark"><!-- circular recovery arrow -->
+   667→   667→    <circle cx="110" cy="105" r="78" fill="none" stroke="#16a34a" stroke-width="16"
+   668→   668→            stroke-linecap="round" stroke-dasharray="402 88" transform="rotate(-52 110 105)"/>
+   669→   669→    <path d="M148 12 L192 30 L150 52 Z" fill="#16a34a"/>
+   670→   670→  </g>
+   671→   671→  <g id="wordmark" fill="currentColor" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-weight="800">
+   672→   672→    <text x="70" y="128" font-size="76">2</text>
+   673→   673→    <text x="116" y="128" font-size="46">nd</text>
+   674→   674→    <text x="205" y="128" font-size="76">Life</text>
+   675→   675→  </g>
+   676→   676→  <text x="208" y="163" font-family="Inter, Arial, sans-serif" font-size="15" letter-spacing="3.2"
+   677→   677→        fill="currentColor" opacity="0.72">REVENUE RECOVERY INTELLIGENCE</text>
+   678→   678→</svg>
+   679→   679→```
+   680→   680→
+   681→   681→Export PNGs at any size for video editors (transparent background preserved):
+   682→   682→
+   683→   683→```bash
+   684→   684→# e.g. 2000px wide for 4K timelines
+   685→   685→npx --yes @resvg/resvg-cli 2ndlife-logo.svg logo@2000.png --width 2000
+   686→   686→# or: rsvg-convert -w 2000 -o logo@2000.png 2ndlife-logo.svg
+   687→   687→```
+   688→   688→
+   689→   689→---
+   690→   690→
+   691→   691→**Suggested order of work:** (1) paste the Phase 0 prompt, verify `ARCHITECTURE_AUDIT.md` and the commit; (2) only then start Phase 1; (3) use the HTML mockups + SVG as the design contract for Phases 3, 5, 6 and 9 UI work. Want me to write the **Phase 1 prompt** next, or convert the four mockups into shadcn component recipes (exact files/props) for Copilot? You are my AI coding assistant and the senior engineer for 2ndLife. I am a vibe coder —
+   692→   692→run everything in the terminal; never ask me to type commands.
+   693→   693→
+   694→   694→READ FIRST: CLAUDE.md · docs/NAHALABS_ENGINEERING_STANDARD.md · docs/PRD.md (2ndLife v2) ·
+   695→   695→docs/ARCHITECTURE_AUDIT.md (Phase 0 output — its "Phase 1 file plan" overrides guesses).
+   696→   696→
+   697→   697→GOAL: Phase 1 — FOUNDATION ONLY. Next.js App Router + TS strict + Tailwind + shadcn + Clerk +
+   698→   698→Neon + Drizzle + tenant context + RBAC + error system + structured logging + security headers.
+   699→   699→NO business modules, NO imports/recovery/campaigns code, NO UI beyond auth/onboarding/shell.
+   700→   700→
+   701→   701→SCOPE RULES:
+   702→   702→- Read existing code first; edit existing files; never create parallel versions.
+   703→   703→- Only create files listed below (plus those the audit's Phase 1 plan justifies).
+   704→   704→- Never git add . — stage explicitly. Never commit .env or secrets.
+   705→   705→- Build resilience is mandatory: nullable db client; services throw DATABASE_NOT_CONFIGURED;
+   706→   706→  auth/db pages use `export const dynamic = 'force-dynamic'`; env keys read at runtime inside
+   707→   707→  functions, never at module load.
+   708→   708→- Verify locally AND check the Vercel Deployments tab after push. Local green ≠ Vercel green.
+   709→   709→
+   710→   710→IMPLEMENT EXACTLY:
+   711→   711→1. Tailwind/shadcn design tokens from the approved mockups (globals.css + tailwind.config):
+   712→   712→   background #f6f8f7 · foreground #0b1220 · card #fff · border #e4eae6 · muted #5c6b64 ·
+   713→   713→   primary #16a34a (fg #fff) · brand-950 #052e22 · brand-900 #0a3b2c · warning #f59e0b ·
+   714→   714→   danger #dc2626 · radius 0.75rem. Theme Clerk via `appearance` to the same tokens.
+   715→   715→2. src/middleware.ts — clerkMiddleware + createRouteMatcher protecting
+   716→   716→   /dashboard(.*) /onboarding(.*) /settings(.*) /customers(.*) /imports(.*) /campaigns(.*)
+   717→   717→   /conversations(.*) /payments(.*) /reports(.*) /integrations(.*). Webhooks + /api/health +
+   718→   718→   /api/v1/selftest stay public.
+   719→   719→3. src/app/login/page.tsx + /signup/page.tsx — Clerk <SignIn/>/<SignUp/> on brand-950 bg,
+   720→   720→   afterSignInUrl=/onboarding. No custom auth code whatsoever.
+   721→   721→4. src/app/(app)/layout.tsx — dark AppShell sidebar (brand-900 rail, primary active pill)
+   722→   722→   matching dashboard.png; <UserButton/> header.
+   723→   723→5. src/lib/db/index.ts — `export const db = process.env.DATABASE_URL ? drizzle(neon(...), {schema}) : null`.
+   724→   724→6. src/lib/db/schema/tenants.ts — baseline ONLY: tenants, users (clerk_id unique indexed),
+   725→   725→   memberships (role: owner|admin|member). drizzle-kit push.
+   726→   726→7. src/modules/tenants/service.ts — getTenantContext() via auth() → users.clerk_id → tenantId;
+   727→   727→   createTenantWithOwner(). src/modules/tenants/rbac.ts — requireRole(ctx, ['owner','admin'])
+   728→   728→   server-side only.
+   729→   729→8. src/app/(app)/onboarding/page.tsx — "Name your company" → create tenant + user → redirect
+   730→   730→   /dashboard; existing tenants redirect straight through.
+   731→   731→9. src/shared/errors/types.ts — AppError { code, message, status }; route wrapper returning
+   732→   732→   { error: { code, message } }; never surface raw DB errors.
+   733→   733→10. src/lib/logging/logger.ts — structured JSON logs with requestId + tenantId; no secrets,
+   734→   734→    no PII.
+   735→   735→11. next.config — security headers: CSP, HSTS, X-Content-Type-Options, X-Frame-Options,
+   736→   736→    Referrer-Policy, Permissions-Policy.
+   737→   737→12. src/app/api/health/route.ts (200 JSON) and src/app/api/v1/selftest/route.ts — structured
+   738→   738→    config status (clerk: ok|missing, db: ok|missing, evolution: not_configured, ...) with ZERO
+   739→   739→    secret values echoed.
+   740→   740→13. Playwright smoke e2e: signup → login → onboarding → dashboard renders shell.
+   741→   741→
+   742→   742→ACCEPTANCE (all must pass before you report success):
+   743→   743→- env -i npm run build  (build green with ZERO env vars)
+   744→   744→- npm run lint && npm run typecheck green
+   745→   745→- curl -I localhost:3000 shows all security headers
+   746→   746→- /dashboard unauthenticated → redirects to /login
+   747→   747→- onboarding creates tenant + membership(owner); revisit redirects to /dashboard
+   748→   748→- /api/v1/selftest returns structured status 200
+   749→   749→- Vercel deployment green after push (you check the Deployments tab and say what you saw)
+   750→   750→- Playwright smoke passes locally
+   751→   751→
+   752→   752→REPORT BACK: files changed · architecture decisions · commands executed · test results ·
+   753→   753→failures (honestly) · remaining work · commit hash(es) · production-readiness status. Both, then — in working order. **Deliverable A** is the literal Phase 1 prompt (run only after Phase 0's audit is committed). **Deliverable B** is the shadcn component recipe pack that turns the four mockups into exact build instructions for Phases 3/5/6/9 (services first — UI recipes are executed only in their own phase).
+   754→   754→
+   755→   755→---
+   756→   756→
+   757→   757→## Deliverable A — Phase 1 prompt (paste into VS Code Copilot)
+   758→   758→
+   759→   759→```text
+   760→   760→You are my AI coding assistant and the senior engineer for 2ndLife. I am a vibe coder —
+   761→   761→run everything in the terminal; never ask me to type commands.
+   762→   762→
+   763→   763→READ FIRST: CLAUDE.md · docs/NAHALABS_ENGINEERING_STANDARD.md · docs/PRD.md (2ndLife v2) ·
+   764→   764→docs/ARCHITECTURE_AUDIT.md (Phase 0 output — its "Phase 1 file plan" overrides guesses).
+   765→   765→
+   766→   766→GOAL: Phase 1 — FOUNDATION ONLY. Next.js App Router + TS strict + Tailwind + shadcn + Clerk +
+   767→   767→Neon + Drizzle + tenant context + RBAC + error system + structured logging + security headers.
+   768→   768→NO business modules, NO imports/recovery/campaigns code, NO UI beyond auth/onboarding/shell.
+   769→   769→
+   770→   770→SCOPE RULES:
+   771→   771→- Read existing code first; edit existing files; never create parallel versions.
+   772→   772→- Only create files listed below (plus those the audit's Phase 1 plan justifies).
+   773→   773→- Never git add . — stage explicitly. Never commit .env or secrets.
+   774→   774→- Build resilience is mandatory: nullable db client; services throw DATABASE_NOT_CONFIGURED;
+   775→   775→  auth/db pages use `export const dynamic = 'force-dynamic'`; env keys read at runtime inside
+   776→   776→  functions, never at module load.
+   777→   777→- Verify locally AND check the Vercel Deployments tab after push. Local green ≠ Vercel green.
+   778→   778→
+   779→   779→IMPLEMENT EXACTLY:
+   780→   780→1. Tailwind/shadcn design tokens from the approved mockups (globals.css + tailwind.config):
+   781→   781→   background #f6f8f7 · foreground #0b1220 · card #fff · border #e4eae6 · muted #5c6b64 ·
+   782→   782→   primary #16a34a (fg #fff) · brand-950 #052e22 · brand-900 #0a3b2c · warning #f59e0b ·
+   783→   783→   danger #dc2626 · radius 0.75rem. Theme Clerk via `appearance` to the same tokens.
+   784→   784→2. src/middleware.ts — clerkMiddleware + createRouteMatcher protecting
+   785→   785→   /dashboard(.*) /onboarding(.*) /settings(.*) /customers(.*) /imports(.*) /campaigns(.*)
+   786→   786→   /conversations(.*) /payments(.*) /reports(.*) /integrations(.*). Webhooks + /api/health +
+   787→   787→   /api/v1/selftest stay public.
+   788→   788→3. src/app/login/page.tsx + /signup/page.tsx — Clerk <SignIn/>/<SignUp/> on brand-950 bg,
+   789→   789→   afterSignInUrl=/onboarding. No custom auth code whatsoever.
+   790→   790→4. src/app/(app)/layout.tsx — dark AppShell sidebar (brand-900 rail, primary active pill)
+   791→   791→   matching dashboard.png; <UserButton/> header.
+   792→   792→5. src/lib/db/index.ts — `export const db = process.env.DATABASE_URL ? drizzle(neon(...), {schema}) : null`.
+   793→   793→6. src/lib/db/schema/tenants.ts — baseline ONLY: tenants, users (clerk_id unique indexed),
+   794→   794→   memberships (role: owner|admin|member). drizzle-kit push.
+   795→   795→7. src/modules/tenants/service.ts — getTenantContext() via auth() → users.clerk_id → tenantId;
+   796→   796→   createTenantWithOwner(). src/modules/tenants/rbac.ts — requireRole(ctx, ['owner','admin'])
+   797→   797→   server-side only.
+   798→   798→8. src/app/(app)/onboarding/page.tsx — "Name your company" → create tenant + user → redirect
+   799→   799→   /dashboard; existing tenants redirect straight through.
+   800→   800→9. src/shared/errors/types.ts — AppError { code, message, status }; route wrapper returning
+   801→   801→   { error: { code, message } }; never surface raw DB errors.
+   802→   802→10. src/lib/logging/logger.ts — structured JSON logs with requestId + tenantId; no secrets,
+   803→   803→    no PII.
+   804→   804→11. next.config — security headers: CSP, HSTS, X-Content-Type-Options, X-Frame-Options,
+   805→   805→    Referrer-Policy, Permissions-Policy.
+   806→   806→12. src/app/api/health/route.ts (200 JSON) and src/app/api/v1/selftest/route.ts — structured
+   807→   807→    config status (clerk: ok|missing, db: ok|missing, evolution: not_configured, ...) with ZERO
+   808→   808→    secret values echoed.
+   809→   809→13. Playwright smoke e2e: signup → login → onboarding → dashboard renders shell.
+   810→   810→
+   811→   811→ACCEPTANCE (all must pass before you report success):
+   812→   812→- env -i npm run build  (build green with ZERO env vars)
+   813→   813→- npm run lint && npm run typecheck green
+   814→   814→- curl -I localhost:3000 shows all security headers
+   815→   815→- /dashboard unauthenticated → redirects to /login
+   816→   816→- onboarding creates tenant + membership(owner); revisit redirects to /dashboard
+   817→   817→- /api/v1/selftest returns structured status 200
+   818→   818→- Vercel deployment green after push (you check the Deployments tab and say what you saw)
+   819→   819→- Playwright smoke passes locally
+   820→   820→
+   821→   821→REPORT BACK: files changed · architecture decisions · commands executed · test results ·
+   822→   822→failures (honestly) · remaining work · commit hash(es) · production-readiness status.
+   823→   823→```
+   824→   824→
+   825→   825→---
+   826→   826→
+   827→   827→## Deliverable B — shadcn recipe pack for the 4 screens
+   828→   828→
+   829→   829→**One-time setup (run in the phase that first needs it):**
+   830→   830→`npx shadcn@latest add button card badge table tabs input label select switch skeleton separator scroll-area sheet dialog sonner form`
+   831→   831→Custom shared components (search first; create once if absent): `components/ui/stepper.tsx`, `components/ui/kpi-card.tsx`, `components/app/app-shell.tsx`, `components/ui/empty-state.tsx`.
+   832→   832→
+   833→   833→### Screen 1 · Import Wizard — Phase 3
+   834→   834→| Element (mockup) | File | shadcn primitives |
+   835→   835→|---|---|---|
+   836→   836→| route | `app/(app)/imports/new/page.tsx` (server) | — |
+   837→   837→| wizard shell + stepper | `modules/imports/ui/import-wizard.tsx` | `stepper`, `Card`, `Button`, `Sonner` |
+   838→   838→| dropzone + mapping table | `modules/imports/ui/steps/{upload,map,validate,preview}-step.tsx` | `Table`, `Select`, `Badge`, `Progress`, `Skeleton` |
+   839→   839→
+   840→   840→Data contract: `MappingRule { csvColumn; field; transform?: "phone_za"|"email"|"zar"|"iso_date"|"status_map" }` · `ValidationSummary { validRows; duplicates; phonesNormalized; errors: ImportError[] }` · `ImportError { row; column; code; message }`.
+   841→   841→Endpoints: `POST /api/v1/imports` (multipart) → `GET /api/v1/imports/:id/preview` → `POST /api/v1/imports/:id/commit`.
+   842→   842→States: skeleton rows matching table layout; 58-error case renders as partial-success banner + downloadable row report (errors never block valid rows); empty state = dropzone. A11y: dropzone is a labelled `<button>`, keyboard-operable.
+   843→   843→
+   844→   844→### Screen 2 · Customer 360 — Phase 3
+   845→   845→| Element | File | Primitives |
+   846→   846→|---|---|---|
+   847→   847→| route (server fetch) | `app/(app)/customers/[id]/page.tsx` | `Skeleton` |
+   848→   848→| score/KPI row, status chips | `modules/customers/ui/score-card.tsx` | `kpi-card`, `Badge` (semantic: lapsed=warning, consent=muted, whatsapp=success) |
+   849→   849→| timeline + score reasons | `modules/customers/ui/timeline.tsx` | `Separator`, `Badge` chips |
+   850→   850→| recommended action rail | `modules/customers/ui/action-rail.tsx` | `Button`, `Dialog` (destructive confirm for Suppress) |
+   851→   851→
+   852→   852→Contract: `Customer360 { id; name; phone; email; status; consent { popia; whatsapp; optedOut }; score { value; reasons[]; risks[] }; estimatedValue; previousValue; inactiveMonths; timeline[]; recommendedAction }`.
+   853→   853→Endpoints: `GET /api/v1/customers/:id` · `POST /api/v1/conversations/start` · `POST /api/v1/customers/:id/escalate` · `POST /api/v1/customers/:id/suppress` (Admin/Owner + confirm + audit). Suppress/opt-out UI always visible, never hover-only.
+   854→   854→
+   855→   855→### Screen 3 · Conversations Inbox — Phase 6
+   856→   856→| Element | File | Primitives |
+   857→   857→|---|---|---|
+   858→   858→| route | `app/(app)/conversations/page.tsx` | — |
+   859→   859→| 3-pane inbox (list/thread/context) | `modules/conversations/ui/inbox.tsx` | `ScrollArea`, `Badge`, `Input`, `Separator`; mobile = list → `Sheet` bottom-inspector |
+   860→   860→| WhatsApp-style thread + payment cards | `modules/conversations/ui/chat-thread.tsx` | `Card`, `Badge` |
+   861→   861→| opportunity + guardrails panel | `modules/conversations/ui/context-panel.tsx` | `Button`, `Card` |
+   862→   862→
+   863→   863→Contract: `Message { id; role: "ai"|"customer"|"system"; kind: "text"|"payment_request"|"payment_confirmed"; body; amount?; at }` · filters `all|awaiting_human|engaged|opted_out`.
+   864→   864→URL state (shareable): `?filter=awaiting_human&conversation=con_123`. TanStack Query with `refetchInterval: 5000` until SSE exists. Endpoints: `GET /api/v1/conversations` · `GET /api/v1/conversations/:id` · `POST .../takeover` · `POST .../opt-out`. Payment-confirmed bubble renders **only** from `kind:"payment_confirmed"` events (webhook truth).
+   865→   865→
+   866→   866→### Screen 4 · Campaign Builder — Phase 5
+   867→   867→| Element | File | Primitives |
+   868→   868→|---|---|---|
+   869→   869→| route | `app/(app)/campaigns/new/page.tsx` | — |
+   870→   870→| RHF+Zod form (5 sections) | `modules/campaigns/ui/campaign-builder.tsx` | `Form`, `Input`, `Select`, `Switch`, `Badge` chips |
+   871→   871→| sticky review + dry-run gate | `modules/campaigns/ui/review-card.tsx` | `Card`, `Button` (Launch `disabled` until `dryRun.passed`) |
+   872→   872→
+   873→   873→Zod draft: `name≥3 · vertical:"funeral-insurance" · audience{inactiveDaysGte≥30, minScore 0–100, whatsappValid, excludeSuppressed} · channel:"whatsapp" · templateId · sendCapPerHour≤500 · businessHours{tz:"Africa/Johannesburg", days, start, end} · retries≤3 · offerBandId · escalateAfterObjections≤5 · stopOptOutRatePct≤10`.
+   874→   874→Endpoints: `POST /api/v1/campaigns` → `POST /api/v1/campaigns/:id/dry-run` (returns `checks[]` rendered as the review checklist) → `POST /api/v1/campaigns/:id/launch` (RBAC-gated; 409 unless dry-run passed).
+   875→   875→
+   876→   876→**Cross-screen rules:** every list gets skeleton + empty + error states; money via one `formatZAR()` util; dates `Africa/Johannesburg`; badges semantic (success/warning/danger/muted) never color-only; all data through TanStack Query hitting `/api/v1/*` — UI never imports services or DB.
+   877→   877→
+   878→   878→---
+   879→   879→
+   880→   880→Run Phase 1 now; when it reports green, say the word and I'll write the **Phase 2 prompt** (database + domain services) in the same format. use the assets i uploaded as they are, including the logo
+   881→   881→
+   882→   882→---
+   883→   883→# 2ndLife — Phase 0 + Phase 1 delivery
+   884→   884→
+   885→   885→First, an honest capability note (rule #30 of your own PRD: *never claim success without verification*): in this chat I am a conversational model — I cannot run `npm run build`, `git commit`, inspect your filesystem, or read the Vercel Deployments tab. If I pretended to, I'd be lying to you. So below I deliver the **actual code and the audit document as paste-ready artifacts**. You apply them, run the acceptance commands, and report back any failures — then we iterate. Everything is written to pass `env -i npm run build` with zero env vars (nullable db client, runtime-only env reads, `force-dynamic` on auth/db pages).
+   886→   886→
+   887→   887→I'm treating this as a **greenfield-style Phase 1** since the PRD describes a fresh repo. If your repo already has any of these files, do **not** create `-v2` versions — open the existing file and merge. (Single Authority Rule, PRD §9 rule #22.)
+   888→   888→
+   889→   889→---
+   890→   890→
+   891→   891→## 1) `docs/ARCHITECTURE_AUDIT.md` (Phase 0 deliverable)
+   892→   892→
+   893→   893→```markdown
+   894→   894→# 2ndLife — Architecture Audit (Phase 0)
+   895→   895→
+   896→   896→> Generated as a baseline for a greenfield / early-stage repo per the
+   897→   897→> NahaLabs Engineering Standard v5.0 and 2ndLife PRD v2. If any path
+   898→   898→> below already exists in the repo, treat the "Reuse map" row as the
+   899→   899→> merge instruction — never create a parallel `-v2.ts` file.
+   900→   900→
+   901→   901→## 1. Inventory (current state)
+   902→   902→
+   903→   903→| Area | Path | Status |
+   904→   904→|---|---|---|
+   905→   905→| Package manifest | `package.json` | Verify deps in §5 below |
+   906→   906→| Lockfile | `pnpm-lock.yaml` / `package-lock.json` | Must exist & match |
+   907→   907→| App routes | `src/app/(marketing)/`, `src/app/(app)/`, `src/app/api/` | To be created in Phase 1 |
+   908→   908→| Modules | `src/modules/{tenants,users,…}` | Phase 1 creates `tenants` only |
+   909→   909→| DB schema | `src/lib/db/schema/*.ts` | Phase 1 creates `tenants.ts` baseline |
+   910→   910→| Integrations | `src/lib/integrations/{evolution,payments}` | Future phases |
+   911→   911→| AI | `src/lib/ai/{providers,tools,prompts,evals}` | Phase 7 |
+   912→   912→| Shared | `src/shared/{types,validation,errors,constants}` | Phase 1 creates `errors/types.ts` |
+   913→   913→| Tests | `tests/e2e/*.spec.ts`, `playwright.config.ts` | Phase 1 smoke only |
+   914→   914→| CI | `.github/workflows/*` | To be added |
+   915→   915→| Docs | `docs/PRD.md`, `docs/NAHALABS_ENGINEERING_STANDARD.md` | Must exist before Phase 1 |
+   916→   916→
+   917→   917→## 2. Reuse map
+   918→   918→
+   919→   919→| File / Pattern | Decision | Reason |
+   920→   920→|---|---|---|
+   921→   921→| Any existing `tailwind.config.*` | Edit, don't duplicate | Single Authority |
+   922→   922→| Any existing `src/middleware.ts` | Edit | Clerk matcher only |
+   923→   923→| Any existing `src/app/layout.tsx` | Edit to add `<ClerkProvider>` | Root layout |
+   924→   924→| Any existing `next.config.*` | Merge headers() | Don't fork config |
+   925→   925→| Any existing schema files | Extend, don't replace | Preserve migrations |
+   926→   926→
+   927→   927→## 3. PRD module mapping
+   928→   928→
+   929→   929→| Module | State (Phase 0) | Phase that builds it |
+   930→   930→|---|---|---|
+   931→   931→| tenants | Missing → Phase 1 baseline | Phase 1 |
+   932→   932→| users | Missing → Phase 1 baseline | Phase 1 |
+   933→   933→| customers | Missing | Phase 3 |
+   934→   934→| imports | Missing | Phase 3 |
+   935→   935→| recovery | Missing | Phase 4 |
+   936→   936→| campaigns | Missing | Phase 5 |
+   937→   937→| conversations | Missing | Phase 6 |
+   938→   938→| messaging | Missing | Phase 6 |
+   939→   939→| payments | Missing | Phase 8 |
+   940→   940→| analytics | Missing | Phase 9 |
+   941→   941→| ai | Missing | Phase 7 |
+   942→   942→| audit | Missing (scaffold in Phase 1 logger) | Phase 1 + 12 |
+   943→   943→
+   944→   944→## 4. Standard violations to prevent (pre-emptive)
+   945→   945→
+   946→   946→These are violations we **will not** introduce. Listed because the Phase 1
+   947→   947→implementation must actively avoid them:
+   948→   948→
+   949→   949→| # | Violation | Severity | Prevention in Phase 1 |
+   950→   950→|---|---|---|---|
+   951→   951→| 4.1 | Custom auth | Critical | Clerk only — no password code |
+   952→   952→| 4.2 | Env read at module load | High | All env reads inside functions |
+   953→   953→| 4.3 | Non-nullable DB client crashes build | High | `db` is `DrizzleClient \| null` |
+   954→   954→| 4.4 | Missing `force-dynamic` on auth/db pages | High | All protected pages export it |
+   955→   955→| 4.5 | UI touches DB | High | UI → `/api/v1/*` only |
+   956→   956→| 4.6 | Fat route handlers | Medium | Routes wrap services |
+   957→   957→| 4.7 | Un-tenant-scoped queries | Critical | All queries filter by `tenantId` from ctx |
+   958→   958→| 4.8 | Missing security headers | High | `next.config.ts` headers() |
+   959→   959→| 4.9 | Secrets in selftest | Critical | Only boolean status, never values |
+   960→   960→| 4.10 | Duplicate components | Medium | Search before create |
+   961→   961→
+   962→   962→## 5. Missing dependencies vs mandated stack
+   963→   963→
+   964→   964→Run once at start of Phase 1 (this is the only install step):
+   965→   965→```bash
+   966→   966→pnpm add @clerk/nextjs drizzle-orm @neondatabase/serverless \
+   967→   967→  @tanstack/react-query @hookform/resolvers react-hook-form zod \
+   968→   968→  @upstash/redis @ai-sdk/openai ai tailwindcss-animate \
+   969→   969→  class-variance-authority clsx tailwind-merge lucide-react
+   970→   970→pnpm add -D drizzle-kit @types/node typescript \
+   971→   971→  @playwright/test prettier eslint eslint-config-next
+   972→   972→```
+   973→   973→(Adjust versions to your lockfile; do not introduce a second package manager.)
+   974→   974→
+   975→   975→## 6. Duplicate / competing components
+   976→   976→None yet (greenfield). Rule enforced going forward: search `src/` before creating any component.
+   977→   977→
+   978→   978→## 7. Env contract
+   979→   979→
+   980→   980→| Var | Read in | Runtime/Build | `.env.example` |
+   981→   981→|---|---|---|---|
+   982→   982→| `DATABASE_URL` | `src/lib/db/index.ts` (runtime) | Runtime | Required |
+   983→   983→| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk (build + runtime) | Both | Required |
+   984→   984→| `CLERK_SECRET_KEY` | Clerk server APIs (runtime) | Runtime | Required |
+   985→   985→| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Clerk | Build | Optional |
+   986→   986→| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Clerk | Build | Optional |
+   987→   987→| `EVOLUTION_API_URL` | future Phase 6 | Runtime | Future |
+   988→   988→| `EVOLUTION_API_KEY` | future Phase 6 | Runtime | Future |
+   989→   989→| `OZOW_API_KEY` | future Phase 8 | Runtime | Future |
+   990→   990→| `OZOW_PASS_KEY` | future Phase 8 | Runtime | Future |
+   991→   991→| `UPSTASH_REDIS_REST_URL` | future phases | Runtime | Future |
+   992→   992→| `UPSTASH_REDIS_REST_TOKEN` | future phases | Runtime | Future |
+   993→   993→| `OPENAI_API_KEY` | future Phase 7 | Runtime | Future |
+   994→   994→| `BLOB_READ_WRITE_TOKEN` | future phases | Runtime | Future |
+   995→   995→| `CRON_SECRET` | future scheduling | Runtime | Future |
+   996→   996→
+   997→   997→**Gaps in `.env.example` to fix in Phase 1:** ensure all Clerk + `DATABASE_URL` keys are listed; all future keys listed as empty strings so the contract is visible.
+   998→   998→
+   999→   999→## 8. Scheduling assessment (future — DO NOT BUILD in Phase 1)
+  1000→  1000→
+  1001→  1001→| Job | Endpoint | Frequency | TZ | Auth |
+  1002→  1002→|---|---|---|---|---|
+  1003→  1003→| Daily recovery sweep | `POST /api/jobs/recovery-sweep` | 02:00 daily | Africa/Johannesburg | `CRON_SECRET` header |
+  1004→  1004→| Follow-up processing | `POST /api/jobs/follow-ups` | Every 15 min | Africa/Johannesburg | `CRON_SECRET` |
+  1005→  1005→| Payment-failure retry | `POST /api/jobs/payment-retry` | 06:00 daily | Africa/Johannesburg | `CRON_SECRET` |
+  1006→  1006→| Evolution keep-warm | GitHub Action → Evolution `/health` | Every 5 min | UTC | Evolution API key (GH secret) |
+  1007→  1007→| Health check | `GET /api/health` | Every 5 min | UTC | Public, no auth |
+  1008→  1008→
+  1009→  1009→All via cron-job.org per the standard; GitHub Actions for the Evolution keep-warm only.
+  1010→  1010→
+  1011→  1011→## 9. Security gap scan (20-point pre-launch checklist — Phase 1 baseline)
+  1012→  1012→
+  1013→  1013→| # | Control | Phase 1 status |
+  1014→  1014→|---|---|---|
+  1015→  1015→| 1 | Clerk auth (no custom) | ✓ Phase 1 |
+  1016→  1016→| 2 | RBAC server-side | ✓ Phase 1 (owner/admin/member) |
+  1017→  1017→| 3 | Zod everywhere | △ Phase 1 onboarding only; full later |
+  1018→  1018→| 4 | Rate limiting | ✗ Phase 12 (Upstash) |
+  1019→  1019→| 5 | Webhook verification | ✗ Phase 6/8 |
+  1020→  1020→| 6 | Webhook idempotency | ✗ Phase 6/8 |
+  1021→  1021→| 7 | Audit logs | △ Logger scaffold Phase 1; full Phase 12 |
+  1022→  1022→| 8 | CSP/HSTS/headers | ✓ Phase 1 |
+  1023→  1023→| 9 | Sanitized uploads | ✗ Phase 3 |
+  1024→  1024→| 10 | Secret management | ✓ Phase 1 (no secrets in code) |
+  1025→  1025→| 11 | Dependency scanning | ✗ Phase 12 (Dependabot) |
+  1026→  1026→| 12 | Consent + opt-out | ✗ Phase 3+ |
+  1027→  1027→| 13 | Data minimization | ✓ Phase 1 (no PII in logs) |
+  1028→  1028→| 14 | Retention rules | ✗ Phase 12 |
+  1029→  1029→| 15 | POPIA review | ✗ Phase 12 |
+  1030→  1030→| 16 | Tenant isolation | ✓ Phase 1 schema + ctx |
+  1031→  1031→| 17 | AI injection/hallucination | ✗ Phase 7 |
+  1032→  1032→| 18 | Verified payments | ✗ Phase 8 |
+  1033→  1033→| 19 | force-dynamic on auth pages | ✓ Phase 1 |
+  1034→  1034→| 20 | Selftest endpoint 200 | ✓ Phase 1 |
+  1035→  1035→
+  1036→  1036→## 10. Risks & technical debt (ranked)
+  1037→  1037→
+  1038→  1038→1. **Clerk + Neon not yet provisioned** — without `DATABASE_URL`, the build must still pass (nullable db handles this).
+  1039→  1039→2. **Drizzle migrations vs `push`** — `push` is fine for Phase 1 baseline; switch to `migrate` before any production data.
+  1040→  1040→3. **No rate limiting yet** — public endpoints (`/api/health`, `/api/v1/selftest`) are unauthenticated; keep logic trivial.
+  1041→  1041→4. **Playwright in CI** — must use `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` testable key or skip in CI initially.
+  1042→  1042→5. **Security headers CSP** — must allow Clerk's `*.clerk.accounts.dev` and `clerk.com` origins or login breaks.
+  1043→  1043→
+  1044→  1044→## 11. Phase 1 file plan (exact)
+  1045→  1045→
+  1046→  1046→**Create:**
+  1047→  1047→- `src/middleware.ts`
+  1048→  1048→- `src/app/login/page.tsx`, `src/app/signup/page.tsx`
+  1049→  1049→- `src/app/(app)/layout.tsx`, `src/app/(app)/dashboard/page.tsx`
+  1050→  1050→- `src/app/(app)/onboarding/page.tsx` (+ `actions.ts` server action)
+  1051→  1051→- `src/lib/db/index.ts`, `src/lib/db/schema/index.ts`, `src/lib/db/schema/tenants.ts`
+  1052→  1052→- `src/modules/tenants/service.ts`, `src/modules/tenants/rbac.ts`
+  1053→  1053→- `src/shared/errors/types.ts`
+  1054→  1054→- `src/lib/logging/logger.ts`
+  1055→  1055→- `src/app/api/health/route.ts`, `src/app/api/v1/selftest/route.ts`
+  1056→  1056→- `tests/e2e/smoke.spec.ts`
+  1057→  1057→- `playwright.config.ts`
+  1058→  1058→
+  1059→  1059→**Edit (do not duplicate):**
+  1060→  1060→- `package.json` (deps + scripts)
+  1061→  1061→- `tailwind.config.ts`, `src/app/globals.css`
+  1062→  1062→- `src/app/layout.tsx` (add `<ClerkProvider>`)
+  1063→  1063→- `next.config.ts` (security headers)
+  1064→  1064→- `.env.example`
+  1065→  1065→
+  1066→  1066→**Do not touch:** anything in `src/modules/{customers,imports,recovery,campaigns,conversations,messaging,payments,analytics,ai,audit}` — those belong to later phases.
+  1067→  1067→
+  1068→  1068→---
+  1069→  1069→
+  1070→  1070→**Open questions (require manual verification):**
+  1071→  1071→1. Is the repo using `pnpm`, `npm`, or `yarn`? (Adjust commands accordingly.)
+  1072→  1072→2. Does `docs/NAHALABS_ENGINEERING_STANDARD.md` exist locally? (Referenced but not provided.)
+  1073→  1073→3. Is `CLAUDE.md` present? (Referenced but not provided.)
+  1074→  1074→4. Are Clerk + Neon accounts already provisioned? (Needed for runtime verification.)
+  1075→  1075→```
+  1076→  1076→
+  1077→  1077→---
+  1078→  1078→
+  1079→  1079→## 2) Phase 1 — Foundation code (paste-ready)
+  1080→  1080→
+  1081→  1081→### `package.json` scripts (merge into existing)
+  1082→  1082→
+  1083→  1083→```json
+  1084→  1084→{
+  1085→  1085→  "scripts": {
+  1086→  1086→    "dev": "next dev",
+  1087→  1087→    "build": "next build",
+  1088→  1088→    "start": "next start",
+  1089→  1089→    "lint": "next lint",
+  1090→  1090→    "typecheck": "tsc --noEmit",
+  1091→  1091→    "db:push": "drizzle-kit push",
+  1092→  1092→    "db:studio": "drizzle-kit studio",
+  1093→  1093→    "e2e": "playwright test",
+  1094→  1094→    "e2e:ui": "playwright test --ui"
+  1095→  1095→  }
+  1096→  1096→}
+  1097→  1097→```
+  1098→  1098→
+  1099→  1099→### `tailwind.config.ts`
+  1100→  1100→
+  1101→  1101→```ts
+  1102→  1102→import type { Config } from "tailwindcss";
+  1103→  1103→import tailwindcssAnimate from "tailwindcss-animate";
+  1104→  1104→
+  1105→  1105→const config: Config = {
+  1106→  1106→  darkMode: ["class"],
+  1107→  1107→  content: ["./src/**/*.{ts,tsx}"],
+  1108→  1108→  theme: {
+  1109→  1109→    container: { center: true, padding: "2rem", screens: { "2xl": "1400px" } },
+  1110→  1110→    extend: {
+  1111→  1111→      colors: {
+  1112→  1112→        background: "#f6f8f7",
+  1113→  1113→        foreground: "#0b1220",
+  1114→  1114→        card: "#ffffff",
+  1115→  1115→        "card-foreground": "#0b1220",
+  1116→  1116→        border: "#e4eae6",
+  1117→  1117→        muted: "#5c6b64",
+  1118→  1118→        "muted-foreground": "#5c6b64",
+  1119→  1119→        primary: { DEFAULT: "#16a34a", foreground: "#ffffff" },
+  1120→  1120→        brand: { 950: "#052e22", 900: "#0a3b2c", 800: "#0b3d2e" },
+  1121→  1121→        warning: { DEFAULT: "#f59e0b", foreground: "#0b1220" },
+  1122→  1122→        danger: { DEFAULT: "#dc2626", foreground: "#ffffff" },
+  1123→  1123→        success: { DEFAULT: "#16a34a", foreground: "#ffffff" },
+  1124→  1124→      },
+  1125→  1125→      borderRadius: { lg: "0.75rem", md: "calc(0.75rem - 2px)", sm: "calc(0.75rem - 4px)" },
+  1126→  1126→      fontFamily: { sans: ["Inter", "Manrope", "system-ui", "sans-serif"] },
+  1127→  1127→    },
+  1128→  1128→  },
+  1129→  1129→  plugins: [tailwindcssAnimate],
+  1130→  1130→};
+  1131→  1131→export default config;
+  1132→  1132→```
+  1133→  1133→
+  1134→  1134→### `src/app/globals.css`
+  1135→  1135→
+  1136→  1136→```css
+  1137→  1137→@tailwind base;
+  1138→  1138→@tailwind components;
+  1139→  1139→@tailwind utilities;
+  1140→  1140→
+  1141→  1141→:root {
+  1142→  1142→  --background: #f6f8f7;
+  1143→  1143→  --foreground: #0b1220;
+  1144→  1144→  --card: #ffffff;
+  1145→  1145→  --border: #e4eae6;
+  1146→  1146→  --muted: #5c6b64;
+  1147→  1147→  --primary: #16a34a;
+  1148→  1148→  --brand-950: #052e22;
+  1149→  1149→  --brand-900: #0a3b2c;
+  1150→  1150→  --warning: #f59e0b;
+  1151→  1151→  --danger: #dc2626;
+  1152→  1152→  --radius: 0.75rem;
+  1153→  1153→}
+  1154→  1154→
+  1155→  1155→html, body { background: var(--background); color: var(--foreground); }
+  1156→  1156→body { font-family: Inter, Manrope, system-ui, sans-serif; }
+  1157→  1157→.tabular-nums { font-variant-numeric: tabular-nums; }
+  1158→  1158→
+  1159→  1159→/* Clerk theming overrides */
+  1160→  1160→.cl-card { background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+  1161→  1161→.cl-formButtonPrimary { background: #16a34a !important; }
+  1162→  1162→.cl-formButtonPrimary:hover { background: #15803d !important; }
+  1163→  1163→```
+  1164→  1164→
+  1165→  1165→### `src/middleware.ts`
+  1166→  1166→
+  1167→  1167→```ts
+  1168→  1168→import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+  1169→  1169→
+  1170→  1170→const isProtectedRoute = createRouteMatcher([
+  1171→  1171→  "/dashboard(.*)",
+  1172→  1172→  "/onboarding(.*)",
+  1173→  1173→  "/settings(.*)",
+  1174→  1174→  "/customers(.*)",
+  1175→  1175→  "/imports(.*)",
+  1176→  1176→  "/campaigns(.*)",
+  1177→  1177→  "/conversations(.*)",
+  1178→  1178→  "/payments(.*)",
+  1179→  1179→  "/reports(.*)",
+  1180→  1180→  "/integrations(.*)",
+  1181→  1181→]);
+  1182→  1182→
+  1183→  1183→export default clerkMiddleware((auth, req) => {
+  1184→  1184→  if (isProtectedRoute(req)) auth().protect();
+  1185→  1185→});
+  1186→  1186→
+  1187→  1187→export const config = {
+  1188→  1188→  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  1189→  1189→};
+  1190→  1190→```
+  1191→  1191→
+  1192→  1192→### `src/app/layout.tsx` (root — edit existing, don't duplicate)
+  1193→  1193→
+  1194→  1194→```tsx
+  1195→  1195→import type { Metadata } from "next";
+  1196→  1196→import { ClerkProvider } from "@clerk/nextjs";
+  1197→  1197→import { Inter } from "next/font/google";
+  1198→  1198→import "./globals.css";
+  1199→  1199→
+  1200→  1200→const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+  1201→  1201→
+  1202→  1202→export const metadata: Metadata = {
+  1203→  1203→  title: "2ndLife — Revenue Recovery Intelligence",
+  1204→  1204→  description: "Give your existing revenue a second life.",
+  1205→  1205→};
+  1206→  1206→
+  1207→  1207→const clerkAppearance = {
+  1208→  1208→  variables: {
+  1209→  1209→    colorPrimary: "#16a34a",
+  1210→  1210→    colorTextOnPrimaryBackground: "#ffffff",
+  1211→  1211→    colorBackground: "#052e22",
+  1212→  1212→    colorInputBackground: "#0a3b2c",
+  1213→  1213→    colorInputText: "#ffffff",
+  1214→  1214→    colorText: "#ffffff",
+  1215→  1215→    colorTextSecondary: "rgba(255,255,255,0.7)",
+  1216→  1216→    borderRadius: "0.75rem",
+  1217→  1217→  },
+  1218→  1218→};
+  1219→  1219→
+  1220→  1220→export default function RootLayout({ children }: { children: React.ReactNode }) {
+  1221→  1221→  return (
+  1222→  1222→    <ClerkProvider appearance={clerkAppearance}>
+  1223→  1223→      <html lang="en" className={inter.variable}>
+  1224→  1224→        <body className="font-sans antialiased">{children}</body>
+  1225→  1225→      </html>
+  1226→  1226→    </ClerkProvider>
+  1227→  1227→  );
+  1228→  1228→}
+  1229→  1229→```
+  1230→  1230→
+  1231→  1231→### `src/app/login/page.tsx`
+  1232→  1232→
+  1233→  1233→```tsx
+  1234→  1234→import { SignIn } from "@clerk/nextjs";
+  1235→  1235→
+  1236→  1236→export const dynamic = "force-dynamic";
+  1237→  1237→
+  1238→  1238→export default function LoginPage() {
+  1239→  1239→  return (
+  1240→  1240→    <div className="min-h-screen flex items-center justify-center bg-brand-950 px-4">
+  1241→  1241→      <SignIn
+  1242→  1242→        afterSignInUrl="/onboarding"
+  1243→  1243→        signUpUrl="/signup"
+  1244→  1244→        appearance={{ elements: { card: "bg-transparent shadow-none" } }}
+  1245→  1245→      />
+  1246→  1246→    </div>
+  1247→  1247→  );
+  1248→  1248→}
+  1249→  1249→```
+  1250→  1250→
+  1251→  1251→### `src/app/signup/page.tsx`
+  1252→  1252→
+  1253→  1253→```tsx
+  1254→  1254→import { SignUp } from "@clerk/nextjs";
+  1255→  1255→
+  1256→  1256→export const dynamic = "force-dynamic";
+  1257→  1257→
+  1258→  1258→export default function SignupPage() {
+  1259→  1259→  return (
+  1260→  1260→    <div className="min-h-screen flex items-center justify-center bg-brand-950 px-4">
+  1261→  1261→      <SignUp
+  1262→  1262→        afterSignUpUrl="/onboarding"
+  1263→  1263→        signInUrl="/login"
+  1264→  1264→        appearance={{ elements: { card: "bg-transparent shadow-none" } }}
+  1265→  1265→      />
+  1266→  1266→    </div>
+  1267→  1267→  );
+  1268→  1268→}
+  1269→  1269→```
+  1270→  1270→
+  1271→  1271→### `src/lib/db/index.ts`
+  1272→  1272→
+  1273→  1273→```ts
+  1274→  1274→import { drizzle } from "drizzle-orm/neon-http";
+  1275→  1275→import { neon } from "@neondatabase/serverless";
+  1276→  1276→import * as schema from "./schema";
+  1277→  1277→
+  1278→  1278→type DbClient = ReturnType<typeof drizzle<typeof schema>>;
+  1279→  1279→
+  1280→  1280→let _db: DbClient | null = null;
+  1281→  1281→let _checked = false;
+  1282→  1282→
+  1283→  1283→function getDb(): DbClient | null {
+  1284→  1284→  if (_checked) return _db;
+  1285→  1285→  _checked = true;
+  1286→  1286→  const url = process.env.DATABASE_URL;
+  1287→  1287→  if (!url) return null;
+  1288→  1288→  _db = drizzle(neon(url), { schema });
+  1289→  1289→  return _db;
+  1290→  1290→}
+  1291→  1291→
+  1292→  1292→export const db = new Proxy({} as DbClient, {
+  1293→  1293→  get(_t, prop) {
+  1294→  1294→    const client = getDb();
+  1295→  1295→    if (!client) {
+  1296→  1296→      throw new Error("DATABASE_NOT_CONFIGURED");
+  1297→  1297→    }
+  1298→  1298→    const value = (client as never as Record<string | symbol, unknown>)[prop];
+  1299→  1299→    return typeof value === "function" ? value.bind(client) : value;
+  1300→  1300→  },
+  1301→  1301→});
+  1302→  1302→
+  1303→  1303→export const isDbConfigured = () => Boolean(process.env.DATABASE_URL);
+  1304→  1304→```
+  1305→  1305→
+  1306→  1306→> Using a `Proxy` keeps the call site ergonomic (`db.query.tenants.findFirst()`) while still letting `env -i npm run build` pass — the proxy only touches env when a method is invoked at runtime, never at module load.
+  1307→  1307→
+  1308→  1308→### `src/lib/db/schema/tenants.ts`
+  1309→  1309→
+  1310→  1310→```ts
+  1311→  1311→import { pgTable, uuid, text, timestamp, varchar, pgEnum, index, uniqueIndex } from "drizzle-orm/pg-core";
+  1312→  1312→
+  1313→  1313→export const tenantRole = pgEnum("tenant_role", ["owner", "admin", "member"]);
+  1314→  1314→
+  1315→  1315→export const tenants = pgTable("tenants", {
+  1316→  1316→  id: uuid("id").defaultRandom().primaryKey(),
+  1317→  1317→  name: varchar("name", { length: 255 }).notNull(),
+  1318→  1318→  vertical: varchar("vertical", { length: 64 }).default("funeral-insurance"),
+  1319→  1319→  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  1320→  1320→  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  1321→  1321→});
+  1322→  1322→
+  1323→  1323→export const users = pgTable(
+  1324→  1324→  "users",
+  1325→  1325→  {
+  1326→  1326→    id: uuid("id").defaultRandom().primaryKey(),
+  1327→  1327→    clerkId: varchar("clerk_id", { length: 128 }).notNull(),
+  1328→  1328→    email: varchar("email", { length: 320 }),
+  1329→  1329→    fullName: varchar("full_name", { length: 255 }),
+  1330→  1330→    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  1331→  1331→    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  1332→  1332→  },
+  1333→  1333→  (t) => ({
+  1334→  1334→    clerkIdx: uniqueIndex("users_clerk_id_idx").on(t.clerkId),
+  1335→  1335→  })
+  1336→  1336→);
+  1337→  1337→
+  1338→  1338→export const memberships = pgTable(
+  1339→  1339→  "memberships",
+  1340→  1340→  {
+  1341→  1341→    id: uuid("id").defaultRandom().primaryKey(),
+  1342→  1342→    tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  1343→  1343→    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  1344→  1344→    role: tenantRole("role").notNull().default("member"),
+  1345→  1345→    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  1346→  1346→  },
+  1347→  1347→  (t) => ({
+  1348→  1348→    tenantIdx: index("memberships_tenant_id_idx").on(t.tenantId),
+  1349→  1349→    userIdx: index("memberships_user_id_idx").on(t.userId),
+  1350→  1350→    uniq: uniqueIndex("memberships_tenant_user_idx").on(t.tenantId, t.userId),
+  1351→  1351→  })
+  1352→  1352→);
+  1353→  1353→
+  1354→  1354→export type Tenant = typeof tenants.$inferSelect;
+  1355→  1355→export type User = typeof users.$inferSelect;
+  1356→  1356→export type Membership = typeof memberships.$inferSelect;
+  1357→  1357→```
+  1358→  1358→
+  1359→  1359→### `src/lib/db/schema/index.ts`
+  1360→  1360→
+  1361→  1361→```ts
+  1362→  1362→export * from "./tenants";
+  1363→  1363→```
+  1364→  1364→
+  1365→  1365→### `src/modules/tenants/service.ts`
+  1366→  1366→
+  1367→  1367→```ts
+  1368→  1368→"use server";
+  1369→  1369→
+  1370→  1370→import { auth } from "@clerk/nextjs/server";
+  1371→  1371→import { eq } from "drizzle-orm";
+  1372→  1372→import { db } from "@/lib/db";
+  1373→  1373→import { tenants, users, memberships } from "@/lib/db/schema";
+  1374→  1374→import { AppError } from "@/shared/errors/types";
+  1375→  1375→import { logger } from "@/lib/logging/logger";
+  1376→  1376→
+  1377→  1377→export type TenantContext = {
+  1378→  1378→  tenantId: string;
+  1379→  1379→  userId: string;
+  1380→  1380→  role: "owner" | "admin" | "member";
+  1381→  1381→};
+  1382→  1382→
+  1383→  1383→export async function getTenantContext(): Promise<TenantContext> {
+  1384→  1384→  const { userId: clerkId } = auth();
+  1385→  1385→  if (!clerkId) throw new AppError("UNAUTHENTICATED", 401, "Not authenticated");
+  1386→  1386→
+  1387→  1387→  if (!process.env.DATABASE_URL) throw new AppError("DATABASE_NOT_CONFIGURED", 503);
+  1388→  1388→
+  1389→  1389→  const user = await db.query.users.findFirst({ where: eq(users.clerkId, clerkId) });
+  1390→  1390→  if (!user) throw new AppError("USER_NOT_FOUND", 404, "User profile not found");
+  1391→  1391→
+  1392→  1392→  const membership = await db.query.memberships.findFirst({ where: eq(memberships.userId, user.id) });
+  1393→  1393→  if (!membership) throw new AppError("NO_TENANT", 404, "User has no tenant");
+  1394→  1394→
+  1395→  1395→  return { tenantId: membership.tenantId, userId: user.id, role: membership.role };
+  1396→  1396→}
+  1397→  1397→
+  1398→  1398→export async function createTenantWithOwner(input: {
+  1399→  1399→  clerkId: string;
+  1400→  1400→  email?: string;
+  1401→  1401→  fullName?: string;
+  1402→  1402→  tenantName: string;
+  1403→  1403→}): Promise<TenantContext> {
+  1404→  1404→  if (!process.env.DATABASE_URL) throw new AppError("DATABASE_NOT_CONFIGURED", 503);
+  1405→  1405→
+  1406→  1406→  // Idempotent: reuse user if already exists
+  1407→  1407→  let user = await db.query.users.findFirst({ where: eq(users.clerkId, input.clerkId) });
+  1408→  1408→  if (!user) {
+  1409→  1409→    const [created] = await db
+  1410→  1410→      .insert(users)
+  1411→  1411→      .values({ clerkId: input.clerkId, email: input.email, fullName: input.fullName })
+  1412→  1412→      .returning();
+  1413→  1413→    user = created;
+  1414→  1414→  }
+  1415→  1415→
+  1416→  1416→  const existing = await db.query.memberships.findFirst({ where: eq(memberships.userId, user!.id) });
+  1417→  1417→  if (existing) {
+  1418→  1418→    return { tenantId: existing.tenantId, userId: user!.id, role: existing.role };
+  1419→  1419→  }
+  1420→  1420→
+  1421→  1421→  const [tenant] = await db.insert(tenants).values({ name: input.tenantName }).returning();
+  1422→  1422→  const [membership] = await db
+  1423→  1423→    .insert(memberships)
+  1424→  1424→    .values({ tenantId: tenant!.id, userId: user!.id, role: "owner" })
+  1425→  1425→    .returning();
+  1426→  1426→
+  1427→  1427→  logger("info", "tenant.created", { tenantId: tenant!.id, userId: user!.id });
+  1428→  1428→
+  1429→  1429→  return { tenantId: membership.tenantId, userId: user!.id, role: membership.role };
+  1430→  1430→}
+  1431→  1431→```
+  1432→  1432→
+  1433→  1433→### `src/modules/tenants/rbac.ts`
+  1434→  1434→
+  1435→  1435→```ts
+  1436→  1436→"use server";
+  1437→  1437→
+  1438→  1438→import { auth } from "@clerk/nextjs/server";
+  1439→  1439→import { eq } from "drizzle-orm";
+  1440→  1440→import { db } from "@/lib/db";
+  1441→  1441→import { memberships, users } from "@/lib/db/schema";
+  1442→  1442→import { AppError } from "@/shared/errors/types";
+  1443→  1443→
+  1444→  1444→const HIERARCHY: Record<string, number> = { owner: 3, admin: 2, member: 1 };
+  1445→  1445→
+  1446→  1446→export async function requireRole(allowed: Array<"owner" | "admin" | "member">) {
+  1447→  1447→  const { userId: clerkId } = auth();
+  1448→  1448→  if (!clerkId) throw new AppError("UNAUTHENTICATED", 401);
+  1449→  1449→
+  1450→  1450→  if (!process.env.DATABASE_URL) throw new AppError("DATABASE_NOT_CONFIGURED", 503);
+  1451→  1451→
+  1452→  1452→  const user = await db.query.users.findFirst({ where: eq(users.clerkId, clerkId) });
+  1453→  1453→  if (!user) throw new AppError("USER_NOT_FOUND", 404);
+  1454→  1454→
+  1455→  1455→  const membership = await db.query.memberships.findFirst({ where: eq(memberships.userId, user.id) });
+  1456→  1456→  if (!membership) throw new AppError("NO_TENANT", 404);
+  1457→  1457→
+  1458→  1458→  const userLevel = HIERARCHY[membership.role] ?? 0;
+  1459→  1459→  const required = Math.min(...allowed.map((r) => HIERARCHY[r]));
+  1460→  1460→  if (userLevel < required) {
+  1461→  1461→    throw new AppError("FORBIDDEN", 403, "Insufficient role");
+  1462→  1462→  }
+  1463→  1463→  return { tenantId: membership.tenantId, userId: user.id, role: membership.role };
+  1464→  1464→}
+  1465→  1465→```
+  1466→  1466→
+  1467→  1467→### `src/shared/errors/types.ts`
+  1468→  1468→
+  1469→  1469→```ts
+  1470→  1470→export class AppError extends Error {
+  1471→  1471→  constructor(
+  1472→  1472→    public readonly code: string,
+  1473→  1473→    public readonly status: number = 500,
+  1474→  1474→    message?: string
+  1475→  1475→  ) {
+  1476→  1476→    super(message ?? code);
+  1477→  1477→    this.name = "AppError";
+  1478→  1478→  }
+  1479→  1479→
+  1480→  1480→  toJSON() {
+  1481→  1481→    return { error: { code: this.code, message: this.message } };
+  1482→  1482→  }
+  1483→  1483→}
+  1484→  1484→
+  1485→  1485→export function toErrorResponse(err: unknown): { status: number; body: { error: { code: string; message: string } } } {
+  1486→  1486→  if (err instanceof AppError) {
+  1487→  1487→    return { status: err.status, body: err.toJSON() };
+  1488→  1488→  }
+  1489→  1489→  // Never surface raw DB / internal errors
+  1490→  1490→  return {
+  1491→  1491→    status: 500,
+  1492→  1492→    body: { error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" } },
+  1493→  1493→  };
+  1494→  1494→}
+  1495→  1495→
+  1496→  1496→export async function withRouteHandler<T>(
+  1497→  1497→  fn: () => Promise<T>
+  1498→  1498→): Promise<{ status: number; body: T | { error: { code: string; message: string } } }> {
+  1499→  1499→  try {
+  1500→  1500→    const data = await fn();
+  1501→  1501→    return { status: 200, body: data };
+  1502→  1502→  } catch (err) {
+  1503→  1503→    return toErrorResponse(err);
+  1504→  1504→  }
+  1505→  1505→}
+  1506→  1506→```
+  1507→  1507→
+  1508→  1508→### `src/lib/logging/logger.ts`
+  1509→  1509→
+  1510→  1510→```ts
+  1511→  1511→type LogLevel = "debug" | "info" | "warn" | "error";
+  1512→  1512→
+  1513→  1513→type LogContext = {
+  1514→  1514→  requestId?: string;
+  1515→  1515→  tenantId?: string;
+  1516→  1516→  userId?: string;
+  1517→  1517→  [k: string]: unknown;
+  1518→  1518→};
+  1519→  1519→
+  1520→  1520→// PII / secret denylist — keys are stripped from logs
+  1521→  1521→const REDACT_KEYS = new Set([
+  1522→  1522→  "password", "token", "secret", "apiKey", "api_key", "authorization",
+  1523→  1523→  "email", "phone", "idNumber", "clerkId",
+  1524→  1524→]);
+  1525→  1525→
+  1526→  1526→function redact(meta: Record<string, unknown>): Record<string, unknown> {
+  1527→  1527→  const out: Record<string, unknown> = {};
+  1528→  1528→  for (const [k, v] of Object.entries(meta)) {
+  1529→  1529→    if (REDACT_KEYS.has(k)) out[k] = "[redacted]";
+  1530→  1530→    else if (v && typeof v === "object" && !Array.isArray(v)) out[k] = redact(v as Record<string, unknown>);
+  1531→  1531→    else out[k] = v;
+  1532→  1532→  }
+  1533→  1533→  return out;
+  1534→  1534→}
+  1535→  1535→
+  1536→  1536→export function logger(level: LogLevel, message: string, ctx: LogContext = {}) {
+  1537→  1537→  const entry = {
+  1538→  1538→    ts: new Date().toISOString(),
+  1539→  1539→    level,
+  1540→  1540→    message,
+  1541→  1541→    ...redact(ctx as Record<string, unknown>),
+  1542→  1542→  };
+  1543→  1543→  const line = JSON.stringify(entry);
+  1544→  1544→  if (level === "error") console.error(line);
+  1545→  1545→  else if (level === "warn") console.warn(line);
+  1546→  1546→  else console.log(line);
+  1547→  1547→}
+  1548→  1548→```
+  1549→  1549→
+  1550→  1550→### `src/app/(app)/layout.tsx`
+  1551→  1551→
+  1552→  1552→```tsx
+  1553→  1553→import { UserButton } from "@clerk/nextjs";
+  1554→  1554→import Link from "next/link";
+  1555→  1555→import { LayoutDashboard, Users, Upload, Megaphone, MessageSquare, CreditCard, BarChart3, Settings, Plug } from "lucide-react";
+  1556→  1556→
+  1557→  1557→const nav = [
+  1558→  1558→  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  1559→  1559→  { href: "/customers", label: "Contacts", icon: Users },
+  1560→  1560→  { href: "/imports", label: "Imports", icon: Upload },
+  1561→  1561→  { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+  1562→  1562→  { href: "/conversations", label: "Conversations", icon: MessageSquare },
+  1563→  1563→  { href: "/payments", label: "Payments", icon: CreditCard },
+  1564→  1564→  { href: "/reports", label: "Reports", icon: BarChart3 },
+  1565→  1565→  { href: "/integrations", label: "Integrations", icon: Plug },
+  1566→  1566→  { href: "/settings", label: "Settings", icon: Settings },
+  1567→  1567→];
+  1568→  1568→
+  1569→  1569→export default function AppLayout({ children }: { children: React.ReactNode }) {
+  1570→  1570→  return (
+  1571→  1571→    <div className="flex min-h-screen bg-background">
+  1572→  1572→      <aside className="w-60 bg-brand-900 text-white/80 flex flex-col">
+  1573→  1573→        <div className="px-5 py-6">
+  1574→  1574→          <div className="flex items-center gap-2 text-white">
+  1575→  1575→            <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-base font-bold">↻</span>
+  1576→  1576→            <span className="text-lg font-extrabold tracking-tight">2ndLife</span>
+  1577→  1577→          </div>
+  1578→  1578→        </div>
+  1579→  1579→        <nav className="flex-1 px-3 space-y-1">
+  1580→  1580→          {nav.map((item) => (
+  1581→  1581→            <Link
+  1582→  1582→              key={item.href}
+  1583→  1583→              href={item.href}
+  1584→  1584→              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/80 transition hover:bg-white/5 hover:text-white [&.active]:bg-primary [&.active]:text-white [&.active]:font-semibold"
+  1585→  1585→            >
+  1586→  1586→              <item.icon className="h-4 w-4" />
+  1587→  1587→              {item.label}
+  1588→  1588→            </Link>
+  1589→  1589→          ))}
+  1590→  1590→        </nav>
+  1591→  1591→      </aside>
+  1592→  1592→      <div className="flex-1 flex flex-col">
+  1593→  1593→        <header className="flex items-center justify-end border-b border-border bg-card px-6 py-3">
+  1594→  1594→          <UserButton afterSignOutUrl="/" />
+  1595→  1595→        </header>
+  1596→  1596→        <main className="flex-1 p-6">{children}</main>
+  1597→  1597→      </div>
+  1598→  1598→    </div>
+  1599→  1599→  );
+  1600→  1600→}
+  1601→  1601→```
+  1602→  1602→
+  1603→  1603→### `src/app/(app)/onboarding/page.tsx`
+  1604→  1604→
+  1605→  1605→```tsx
+  1606→  1606→import { redirect } from "next/navigation";
+  1607→  1607→import { auth, currentUser } from "@clerk/nextjs/server";
+  1608→  1608→import { getTenantContext } from "@/modules/tenants/service";
+  1609→  1609→import { OnboardingForm } from "./onboarding-form";
+  1610→  1610→
+  1611→  1611→export const dynamic = "force-dynamic";
+  1612→  1612→
+  1613→  1613→export default async function OnboardingPage() {
+  1614→  1614→  const { userId: clerkId } = auth();
+  1615→  1615→  if (!clerkId) redirect("/login");
+  1616→  1616→
+  1617→  1617→  // Skip onboarding if user already has a tenant
+  1618→  1618→  try {
+  1619→  1619→    const ctx = await getTenantContext();
+  1620→  1620→    if (ctx.tenantId) redirect("/dashboard");
+  1621→  1621→  } catch {
+  1622→  1622→    // expected when no tenant yet — fall through to form
+  1623→  1623→  }
+  1624→  1624→
+  1625→  1625→  const user = await currentUser();
+  1626→  1626→
+  1627→  1627→  return (
+  1628→  1628→    <div className="min-h-screen bg-brand-950 flex items-center justify-center px-4">
+  1629→  1629→      <div className="w-full max-w-md rounded-xl border border-white/10 bg-brand-900 p-8 text-white">
+  1630→  1630→        <h1 className="text-2xl font-extrabold">Welcome to 2ndLife</h1>
+  1631→  1631→        <p className="mt-1 text-sm text-white/70">Name your company to finish setup.</p>
+  1632→  1632→        <OnboardingForm
+  1633→  1633→          defaultName={user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : ""}
+  1634→  1634→          email={user?.emailAddresses?.[0]?.emailAddress}
+  1635→  1635→          fullName={user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined}
+  1636→  1636→        />
+  1637→  1637→      </div>
+  1638→  1638→    </div>
+  1639→  1639→  );
+  1640→  1640→}
+  1641→  1641→```
+  1642→  1642→
+  1643→  1643→### `src/app/(app)/onboarding/onboarding-form.tsx`
+  1644→  1644→
+  1645→  1645→```tsx
+  1646→  1646→"use client";
+  1647→  1647→
+  1648→  1648→import { useState } from "react";
+  1649→  1649→import { useRouter } from "next/navigation";
+  1650→  1650→import { zodResolver } from "@hookform/resolvers/zod";
+  1651→  1651→import { useForm } from "react-hook-form";
+  1652→  1652→import { z } from "zod";
+  1653→  1653→
+  1654→  1654→const schema = z.object({
+  1655→  1655→  companyName: z.string().min(2, "Company name is too short").max(120),
+  1656→  1656→});
+  1657→  1657→type Values = z.infer<typeof schema>;
+  1658→  1658→
+  1659→  1659→export function OnboardingForm({ defaultName, email, fullName }: { defaultName?: string; email?: string; fullName?: string }) {
+  1660→  1660→  const router = useRouter();
+  1661→  1661→  const [submitting, setSubmitting] = useState(false);
+  1662→  1662→  const [error, setError] = useState<string | null>(null);
+  1663→  1663→
+  1664→  1664→  const { register, handleSubmit, formState: { errors } } = useForm<Values>({
+  1665→  1665→    resolver: zodResolver(schema),
+  1666→  1666→    defaultValues: { companyName: "" },
+  1667→  1667→  });
+  1668→  1668→
+  1669→  1669→  async function onSubmit(values: Values) {
+  1670→  1670→    setSubmitting(true);
+  1671→  1671→    setError(null);
+  1672→  1672→    const res = await fetch("/api/v1/onboarding", {
+  1673→  1673→      method: "POST",
+  1674→  1674→      headers: { "Content-Type": "application/json" },
+  1675→  1675→      body: JSON.stringify({ ...values, email, fullName }),
+  1676→  1676→    });
+  1677→  1677→    if (!res.ok) {
+  1678→  1678→      const body = await res.json().catch(() => null);
+  1679→  1679→      setError(body?.error?.message ?? "Failed to create tenant");
+  1680→  1680→      setSubmitting(false);
+  1681→  1681→      return;
+  1682→  1682→    }
+  1683→  1683→    router.push("/dashboard");
+  1684→  1684→    router.refresh();
+  1685→  1685→  }
+  1686→  1686→
+  1687→  1687→  return (
+  1688→  1688→    <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+  1689→  1689→      <div>
+  1690→  1690→        <label className="block text-sm font-medium text-white/80">Company name</label>
+  1691→  1691→        <input
+  1692→  1692→          {...register("companyName")}
+  1693→  1693→          defaultValue={defaultName}
+  1694→  1694→          className="mt-1 w-full rounded-lg border border-white/10 bg-brand-950 px-3 py-2 text-white placeholder:text-white/30 focus:border-primary focus:outline-none"
+  1695→  1695→          placeholder="Acme Funeral Cover"
+  1696→  1696→        />
+  1697→  1697→        {errors.companyName && <p className="mt-1 text-xs text-danger">{errors.companyName.message}</p>}
+  1698→  1698→      </div>
+  1699→  1699→      {error && <p className="text-sm text-danger">{error}</p>}
+  1700→  1700→      <button
+  1701→  1701→        type="submit"
+  1702→  1702→        disabled={submitting}
+  1703→  1703→        className="w-full rounded-lg bg-primary px-4 py-2.5 font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+  1704→  1704→      >
+  1705→  1705→        {submitting ? "Creating…" : "Create workspace"}
+  1706→  1706→      </button>
+  1707→  1707→    </form>
+  1708→  1708→  );
+  1709→  1709→}
+  1710→  1710→```
+  1711→  1711→
+  1712→  1712→### `src/app/api/v1/onboarding/route.ts`
+  1713→  1713→
+  1714→  1714→```ts
+  1715→  1715→import { NextResponse } from "next/server";
+  1716→  1716→import { auth } from "@clerk/nextjs/server";
+  1717→  1717→import { z } from "zod";
+  1718→  1718→import { createTenantWithOwner } from "@/modules/tenants/service";
+  1719→  1719→import { toErrorResponse } from "@/shared/errors/types";
+  1720→  1720→
+  1721→  1721→export const dynamic = "force-dynamic";
+  1722→  1722→
+  1723→  1723→const Body = z.object({
+  1724→  1724→  companyName: z.string().min(2).max(120),
+  1725→  1725→  email: z.string().email().optional(),
+  1726→  1726→  fullName: z.string().max(255).optional(),
+  1727→  1727→});
+  1728→  1728→
+  1729→  1729→export async function POST(req: Request) {
+  1730→  1730→  try {
+  1731→  1731→    const { userId: clerkId } = auth();
+  1732→  1732→    if (!clerkId) return NextResponse.json({ error: { code: "UNAUTHENTICATED", message: "Not authenticated" } }, { status: 401 });
+  1733→  1733→
+  1734→  1734→    const parsed = Body.safeParse(await req.json().catch(() => null));
+  1735→  1735→    if (!parsed.success) {
+  1736→  1736→      return NextResponse.json({ error: { code: "VALIDATION_ERROR", message: parsed.error.message } }, { status: 400 });
+  1737→  1737→    }
+  1738→  1738→
+  1739→  1739→    const ctx = await createTenantWithOwner({ clerkId, ...parsed.data });
+  1740→  1740→    return NextResponse.json({ tenantId: ctx.tenantId });
+  1741→  1741→  } catch (err) {
+  1742→  1742→    const { status, body } = toErrorResponse(err);
+  1743→  1743→    return NextResponse.json(body, { status });
+  1744→  1744→  }
+  1745→  1745→}
+  1746→  1746→```
+  1747→  1747→
+  1748→  1748→### `src/app/(app)/dashboard/page.tsx`
+  1749→  1749→
+  1750→  1750→```tsx
+  1751→  1751→import { redirect } from "next/navigation";
+  1752→  1752→import { auth } from "@clerk/nextjs/server";
+  1753→  1753→import { getTenantContext } from "@/modules/tenants/service";
+  1754→  1754→
+  1755→  1755→export const dynamic = "force-dynamic";
+  1756→  1756→
+  1757→  1757→export default async function DashboardPage() {
+  1758→  1758→  const { userId } = auth();
+  1759→  1759→  if (!userId) redirect("/login");
+  1760→  1760→
+  1761→  1761→  let tenantOk = false;
+  1762→  1762→  try {
+  1763→  1763→    await getTenantContext();
+  1764→  1764→    tenantOk = true;
+  1765→  1765→  } catch {
+  1766→  1766→    redirect("/onboarding");
+  1767→  1767→  }
+  1768→  1768→
+  1769→  1769→  if (!tenantOk) redirect("/onboarding");
+  1770→  1770→
+  1771→  1771→  return (
+  1772→  1772→    <div className="space-y-6">
+  1773→  1773→      <div>
+  1774→  1774→        <h1 className="text-2xl font-extrabold">Dashboard</h1>
+  1775→  1775→        <p className="text-sm text-muted-foreground">Recovery overview — populated in Phase 9.</p>
+  1776→  1776→      </div>
+  1777→  1777→      <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+  1778→  1778→        Phase 1 shell ready. Analytics arrive in Phase 9 per <code>dashboard.png</code>.
+  1779→  1779→      </div>
+  1780→  1780→    </div>
+  1781→  1781→  );
+  1782→  1782→}
+  1783→  1783→```
+  1784→  1784→
+  1785→  1785→### `src/app/api/health/route.ts`
+  1786→  1786→
+  1787→  1787→```ts
+  1788→  1788→export const dynamic = "force-dynamic";
+  1789→  1789→
+  1790→  1790→export async function GET() {
+  1791→  1791→  return Response.json({ status: "ok", ts: new Date().toISOString() }, { status: 200 });
+  1792→  1792→}
+  1793→  1793→```
+  1794→  1794→
+  1795→  1795→### `src/app/api/v1/selftest/route.ts`
+  1796→  1796→
+  1797→  1797→```ts
+  1798→  1798→import { headers } from "next/headers";
+  1799→  1799→
+  1800→  1800→export const dynamic = "force-dynamic";
+  1801→  1801→export const runtime = "nodejs";
+  1802→  1802→
+  1803→  1803→export async function GET() {
+  1804→  1804→  // NEVER echo secret values — only booleans / status strings
+  1805→  1805→  const status = {
+  1806→  1806→    ts: new Date().toISOString(),
+  1807→  1807→    runtime: "nodejs" as const,
+  1808→  1808→    clerk: Boolean(process.env.CLERK_SECRET_KEY) && Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
+  1809→  1809→      ? ("ok" as const)
+  1810→  1810→      : ("missing" as const),
+  1811→  1811→    database: process.env.DATABASE_URL ? ("ok" as const) : ("missing" as const),
+  1812→  1812→    evolution: "not_configured" as const,
+  1813→  1813→    payments: "not_configured" as const,
+  1814→  1814→    upstash: process.env.UPSTASH_REDIS_REST_URL ? ("ok" as const) : ("missing" as const),
+  1815→  1815→    ai: process.env.OPENAI_API_KEY ? ("ok" as const) : ("missing" as const),
+  1816→  1816→    blob: process.env.BLOB_READ_WRITE_TOKEN ? ("ok" as const) : ("missing" as const),
+  1817→  1817→    requestId: headers().get("x-request-id") ?? undefined,
+  1818→  1818→  };
+  1819→  1819→
+  1820→  1820→  return Response.json(status, { status: 200 });
+  1821→  1821→}
+  1822→  1822→```
+  1823→  1823→
+  1824→  1824→### `next.config.ts` (merge `headers()` into existing — don't duplicate)
+  1825→  1825→
+  1826→  1826→```ts
+  1827→  1827→import type { NextConfig } from "next";
+  1828→  1828→
+  1829→  1829→const securityHeaders = () => [
+  1830→  1830→  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  1831→  1831→  { key: "X-Content-Type-Options", value: "nosniff" },
+  1832→  1832→  { key: "X-Frame-Options", value: "DENY" },
+  1833→  1833→  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  1834→  1834→  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  1835→  1835→  {
+  1836→  1836→    key: "Content-Security-Policy",
+  1837→  1837→    value: [
+  1838→  1838→      "default-src 'self'",
+  1839→  1839→      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.com",
+  1840→  1840→      "style-src 'self' 'unsafe-inline'",
+  1841→  1841→      "img-src 'self' data: blob: https://img.clerk.com",
+  1842→  1842→      "font-src 'self' data:",
+  1843→  1843→      "connect-src 'self' https://*.clerk.accounts.dev https://api.clerk.com https://neon.tech https://*.neon.tech",
+  1844→  1844→      "frame-ancestors 'none'",
+  1845→  1845→      "base-uri 'self'",
+  1846→  1846→      "form-action 'self' https://*.clerk.accounts.dev",
+  1847→  1847→    ].join("; "),
+  1848→  1848→  },
+  1849→  1849→];
+  1850→  1850→
+  1851→  1851→const config: NextConfig = {
+  1852→  1852→  reactStrictMode: true,
+  1853→  1853→  async headers() {
+  1854→  1854→    return [{ source: "/(.*)", headers: securityHeaders() }];
+  1855→  1855→  },
+  1856→  1856→};
+  1857→  1857→
+  1858→  1858→export default config;
+  1859→  1859→```
+  1860→  1860→
+  1861→  1861→### `playwright.config.ts`
+  1862→  1862→
+  1863→  1863→```ts
+  1864→  1864→import { defineConfig, devices } from "@playwright/test";
+  1865→  1865→
+  1866→  1866→export default defineConfig({
+  1867→  1867→  testDir: "./tests/e2e",
+  1868→  1868→  fullyParallel: true,
+  1869→  1869→  forbidOnly: !!process.env.CI,
+  1870→  1870→  retries: process.env.CI ? 2 : 0,
+  1871→  1871→  workers: process.env.CI ? 1 : undefined,
+  1872→  1872→  reporter: "html",
+  1873→  1873→  use: {
+  1874→  1874→    baseURL: "http://localhost:3000",
+  1875→  1875→    trace: "on-first-retry",
+  1876→  1876→  },
+  1877→  1877→  projects: [
+  1878→  1878→    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+  1879→  1879→  ],
+  1880→  1880→  webServer: {
+  1881→  1881→    command: "npm run dev",
+  1882→  1882→    url: "http://localhost:3000",
+  1883→  1883→    reuseExistingServer: !process.env.CI,
+  1884→  1884→    timeout: 120_000,
+  1885→  1885→  },
+  1886→  1886→});
+  1887→  1887→```
+  1888→  1888→
+  1889→  1889→### `tests/e2e/smoke.spec.ts`
+  1890→  1890→
+  1891→  1891→```ts
+  1892→  1892→import { test, expect } from "@playwright/test";
+  1893→  1893→
+  1894→  1894→test("health endpoint returns 200", async ({ request }) => {
+  1895→  1895→  const res = await request.get("/api/health");
+  1896→  1896→  expect(res.ok()).toBeTruthy();
+  1897→  1897→  const body = await res.json();
+  1898→  1898→  expect(body.status).toBe("ok");
+  1899→  1899→});
+  1900→  1900→
+  1901→  1901→test("selftest returns structured status", async ({ request }) => {
+  1902→  1902→  const res = await request.get("/api/v1/selftest");
+  1903→  1903→  expect(res.status()).toBe(200);
+  1904→  1904→  const body = await res.json();
+  1905→  1905→  expect(body).toHaveProperty("clerk");
+  1906→  1906→  expect(body).toHaveProperty("database");
+  1907→  1907→  expect(body).toHaveProperty("runtime", "nodejs");
+  1908→  1908→});
+  1909→  1909→
+  1910→  1910→test("protected route redirects unauthenticated user to login", async ({ page }) => {
+  1911→  1911→  await page.goto("/dashboard");
+  1912→  1912→  await expect(page).toHaveURL(/\/(login|sign-in)/);
+  1913→  1913→});
+  1914→  1914→
+  1915→  1915→test("security headers are present", async ({ request }) => {
+  1916→  1916→  const res = await request.get("/");
+  1917→  1917→  const headers = res.headers();
+  1918→  1918→  expect(headers["x-content-type-options"]).toBe("nosniff");
+  1919→  1919→  expect(headers["x-frame-options"]).toBe("DENY");
+  1920→  1920→  expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  1921→  1921→  expect(headers["strict-transport-security"]).toContain("max-age");
+  1922→  1922→});
+  1923→  1923→```
+  1924→  1924→
+  1925→  1925→> The Playwright auth-flow smoke (`signup → onboarding → dashboard`) needs Clerk test keys; if you don't have them yet, the four tests above are the build-gating subset. The full happy-path E2E is Phase 11.
+  1926→  1926→
+  1927→  1927→### `.env.example` (merge — never commit real values)
+  1928→  1928→
+  1929→  1929→```bash
+  1930→  1930→# Clerk
+  1931→  1931→NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+  1932→  1932→CLERK_SECRET_KEY=
+  1933→  1933→NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login
+  1934→  1934→NEXT_PUBLIC_CLERK_SIGN_UP_URL=/signup
+  1935→  1935→
+  1936→  1936→# Neon Postgres
+  1937→  1937→DATABASE_URL=
+  1938→  1938→
+  1939→  1939→# Upstash Redis (future)
+  1940→  1940→UPSTASH_REDIS_REST_URL=
+  1941→  1941→UPSTASH_REDIS_REST_TOKEN=
+  1942→  1942→
+  1943→  1943→# Vercel AI SDK / OpenAI (Phase 7)
+  1944→  1944→OPENAI_API_KEY=
+  1945→  1945→
+  1946→  1946→# Evolution API (Phase 6)
+  1947→  1947→EVOLUTION_API_URL=
+  1948→  1948→EVOLUTION_API_KEY=
+  1949→  1949→
+  1950→  1950→# Ozow (Phase 8)
+  1951→  1951→OZOW_API_KEY=
+  1952→  1952→OZOW_PASS_KEY=
+  1953→  1953→
+  1954→  1954→# Vercel Blob (future)
+  1955→  1955→BLOB_READ_WRITE_TOKEN=
+  1956→  1956→
+  1957→  1957→# Cron jobs (future)
+  1958→  1958→CRON_SECRET=
+  1959→  1959→```
+  1960→  1960→
+  1961→  1961→---
+  1962→  1962→
+  1963→  1963→## 3) Commands to run (in order)
+  1964→  1964→
+  1965→  1965→```bash
+  1966→  1966→# 1. Install deps (use whichever lockfile you already have)
+  1967→  1967→pnpm add @clerk/nextjs drizzle-orm @neondatabase/serverless \
+  1968→  1968→  @tanstack/react-query @hookform/resolvers react-hook-form zod \
+  1969→  1969→  @upstash/redis @ai-sdk/openai ai tailwindcss-animate \
+  1970→  1970→  class-variance-authority clsx tailwind-merge lucide-react
+  1971→  1971→pnpm add -D drizzle-kit @playwright/test @types/node typescript prettier eslint eslint-config-next
+  1972→  1972→
+  1973→  1973→# 2. Install Playwright browsers
+  1974→  1974→npx playwright install --with-deps chromium
+  1975→  1975→
+  1976→  1976→# 3. Apply schema to Neon (requires DATABASE_URL)
+  1977→  1977→pnpm db:push
+  1978→  1978→
+  1979→  1979→# 4. Build with zero env (must pass — this is the resilience test)
+  1980→  1980→env -i PATH="$PATH" HOME="$HOME" pnpm build
+  1981→  1981→
+  1982→  1982→# 5. Lint + typecheck
+  1983→  1983→pnpm lint && pnpm typecheck
+  1984→  1984→
+  1985→  1985→# 6. Headers check
+  1986→  1986→pnpm start &  # in another terminal
+  1987→  1987→curl -sI http://localhost:3000 | grep -iE "strict-transport-security|x-content-type-options|x-frame-options|referrer-policy|permissions-policy|content-security-policy"
+  1988→  1988→
+  1989→  1989→# 7. Selftest
+  1990→  1990→curl -s http://localhost:3000/api/v1/selftest | jq
+  1991→  1991→
+  1992→  1992→# 8. Playwright smoke
+  1993→  1993→pnpm e2e
+  1994→  1994→
+  1995→  1995→# 9. Stage explicitly (never `git add .`)
+  1996→  1996→git add docs/ARCHITECTURE_AUDIT.md \
+  1997→  1997→  src/middleware.ts \
+  1998→  1998→  src/app/login/page.tsx src/app/signup/page.tsx \
+  1999→  1999→  "src/app/(app)/layout.tsx" "src/app/(app)/dashboard/page.tsx" \
+  2000→  2000→  "src/app/(app)/onboarding/page.tsx" "src/app/(app)/onboarding/onboarding-form.tsx" \
+
+[showing lines 1-2000 of 2002; use offset=2001 with limit to continue reading]

@@ -1,0 +1,402 @@
+     1→You are my AI coding assistant and the senior engineer for 2ndLife. I am a vibe coder —
+     2→run everything in the terminal; never ask me to type commands.
+     3→
+     4→READ THESE FIRST (in order), then follow them exactly:
+     5→1. CLAUDE.md (NAHALABS AI SOFTWARE ENGINEERING SYSTEM)
+     6→2. docs/NAHALABS_ENGINEERING_STANDARD.md (v5.0 + amendments: Upstash Redis, MCP Gateway §14,
+     7→   cron-job.org scheduling standard, 20-point pre-launch security checklist, PraisonAI adapter rule)
+     8→3. docs/PRD.md (2ndLife PRD v2 — "Revenue Recovery Intelligence")
+     9→4. Design assets: 2ndLife-logo-exact.png (logo — never redesign), landing-option2.png,
+    10→   dashboard.png (UI source of truth), 2ndlife-screens.html (4 inner-screen mockups),
+    11→   2ndlife-logo.svg (vector master).
+    12→
+    13→GOAL: Phase 0 — REPOSITORY AUDIT ONLY. Produce ARCHITECTURE_AUDIT.md. NO other file
+    14→created, modified, deleted, refactored or renamed. NO code written. NO dependencies installed.
+    15→
+    16→SCOPE RULES:
+    17→- Read existing code before creating anything. Search first, create second.
+    18→- Do NOT create parallel versions of existing files (no *-v2.ts, no duplicate components).
+    19→- Do NOT touch anything outside this task. Do NOT commit secrets (.env, keys, tokens).
+    20→- Stage files explicitly (git add docs/ARCHITECTURE_AUDIT.md only). Never git add .
+    21→- If anything is ambiguous, record it as an open question in the audit — do not guess.
+    22→
+    23→INSPECT AT MINIMUM: package.json · lockfile · src/ (app, modules, lib, shared, components) ·
+    24→database schema/migrations · .env.example vs actual env usage · existing routes & webhooks ·
+    25→existing integrations (Evolution, payments, email) · AI code (provider imports, prompts, tools) ·
+    26→tests & Playwright config · CI workflows · README · docs/.
+    27→
+    28→ARCHITECTURE_AUDIT.md MUST CONTAIN:
+    29→1. Inventory: what exists today, per module, with file paths.
+    30→2. Reuse map: what can be reused as-is vs reworked vs discarded.
+    31→3. PRD module mapping: tenants, users, customers, imports, recovery, campaigns, conversations,
+    32→   messaging, payments, analytics, ai, audit — current state of each (missing/partial/complete).
+    33→4. Standard violations vs NAHALABS_ENGINEERING_STANDARD.md, each with severity and fix plan
+    34→   (check: custom auth? scattered WhatsApp calls? raw provider SDK imports? LangChain? UI→DB
+    35→   access? fat route handlers? un-tenant-scoped tables? unverified webhooks? payments confirmed
+    36→   by redirects? duplicate files? env vars read at module load? missing force-dynamic on auth pages?).
+    37→5. Missing dependencies vs the mandated stack (Next.js App Router, TS strict, Tailwind+shadcn,
+    38→   RHF+Zod, TanStack Query, Clerk, Neon+Drizzle, Vercel AI SDK, Upstash, Vercel Blob, Playwright).
+    39→6. Duplicate/competing components list (Single Authority Rule).
+    40→7. Env contract: every env var referenced, where read, runtime vs build-time; .env.example gaps.
+    41→8. Scheduling assessment (cron-job.org standard): list future jobs ONLY (daily recovery sweep,
+    42→   follow-up processing, payment-failure retry, Evolution keep-warm via GitHub Actions, health
+    43→   check) with endpoint names, frequency, timezone Africa/Johannesburg, auth plan — DO NOT BUILD.
+    44→9. Security gap scan against the 20-point pre-launch checklist (POPIA included).
+    45→10. Risks & technical debt, ranked.
+    46→11. Recommended Phase 1 file plan (exact files to create/edit) so Phase 1 starts clean.
+    47→
+    48→REPORT BACK:
+    49→- Files changed (must be exactly: docs/ARCHITECTURE_AUDIT.md)
+    50→- Build result (npm run build — must remain green/unchanged)
+    51→- New commit hash (single explicit commit)
+    52→- Top 5 risks found
+    53→- Anything requiring manual verification
+    54→Never claim success without verification.. 2ndLife PRD + execution plan. It stays 100% focused on **2ndLife = Revenue Recovery Intelligence**, mandates your NahaLabs stack, and — new in this version — locks your approved Option 2 landing page and dashboard mockups as the **UI source of truth**, adds a concrete scoring model, SA-specific normalization/payment details, and tighter per-phase acceptance criteria. Paste everything between the rules lines into VS Code Copilot.
+    55→
+    56→---
+    57→
+    58→# 2ndLife — Enterprise PRD + Engineering Execution Plan (v2)
+    59→
+    60→**Product:** 2ndLife · **Company:** NahaLabs (Pty) Ltd
+    61→**Positioning:** Revenue Recovery Intelligence
+    62→**Tagline:** *Give your existing revenue a second life.*
+    63→**Companion assets (UI source of truth):** `2ndLife-logo-exact.png` (logo — use exactly as-is, never redesign), `landing-option2.png` (approved marketing site), `dashboard.png` (approved app shell).
+    64→
+    65→## 1. Product Definition
+    66→
+    67→2ndLife is a multi-tenant SaaS platform that finds revenue already inside a business's systems — inactive, stale, abandoned, unpaid or at-risk — and recovers it through intelligent, empathetic workflows (WhatsApp-first).
+    68→
+    69→Core question: *"Who already wanted to buy, pay, renew or continue — and what stopped them?"*
+    70→
+    71→Product loop: **Detect → Prioritize → Engage → Recover → Verify → Measure**
+    72→
+    73→Initial recovery categories: stale leads, abandoned quotes, unconverted opportunities, lapsed customers, missed renewals, unpaid invoices, failed payments, dormant customers, expired offers, at-risk recurring revenue.
+    74→
+    75→## 2. Go-To-Market & Verticals Rule
+    76→
+    77→- **Architecture is horizontal.** No insurance concepts in core modules.
+    78→- **GTM vertical #1 = South African funeral & micro-insurance** (this is what the approved mockups depict). A vertical is a *configuration package* (terminology: policy/premium/lapsed; offer rules; compliance copy), e.g. `src/modules/verticals/funeral-insurance/`, never a fork of core logic.
+    79→- Later segments (subscriptions, financial services, education, healthcare, retail, B2B, professional services) = additional config packages only.
+    80→
+    81→## 3. Brand & Design System (mandatory for all UI work)
+    82→
+    83→- **Logo:** use the provided asset unchanged. Circular green cycle-arrow + "2ndLife" wordmark + "Revenue Recovery Intelligence" tagline.
+    84→- **Tokens (sampled from approved mockups; formalize in Tailwind config):**
+    85→  - `brand-950 #052E22` (hero/footer/sidebar), `brand-800 #0B3D2E`, `primary #16A34A`, `primary-soft #E9F6EE`, `accent-orange #F59E0B`, `ink #0B1220`, `bg #F7F8F9`, cards white.
+    86→- **Type:** Inter/Manrope; bold headings with a green accent span; sentence case; tabular numerals for money; `R` + comma thousands; SA English ("centre", "organisation").
+    87→- **Landing page must keep approved anchors:** headline "Give Your Revenue a Second Life."; 4 benefit bullets; "Secure. Compliant. Built for South African Businesses."; client logo strip; "Every lapsed policy is revenue you've already earned." problem section; "2ndLife Changes That." (WhatsApp AI, Ozow Instant EFT, smart workflows, recover more/spend less); 5 feature cards; 5-step How It Works (Upload → Score & Prioritize → Engage → Collect → Reactivate); testimonial block (R1.2M+ / 38% / 70%); WhatsApp demo chat card; footer with POPIA/Terms/Privacy.
+    88→- **Dashboard principles:** answer 4 questions first (recoverable? recovered? working? needs attention?); KPI cards with 7-day deltas; recovery funnel; operational charts only — no decorative widgets; quick actions; AI-insight strip. **Data-integrity rule: production funnels must be monotonic (each stage ≤ previous); mockup numbers are illustrative only.**
+    89→
+    90→## 4. MVP Scope
+    91→
+    92→**A. Onboarding:** Clerk auth; tenant creation; invitations; Owner/Admin/Member RBAC; business profile; vertical selection.
+    93→
+    94→**B. Import (CSV):** column mapping; validation; preview; error report; dedupe; import history. Normalize SA phones to E.164 (`072 123 4567` → `+27721234567`, use `libphonenumber-js`); validate emails; flag WhatsApp-capable numbers.
+    95→
+    96→**C. Recovery scoring — deterministic, explainable, no LLM:**
+    97→
+    98→| Factor | Weight | Signal |
+    99→|---|---|---|
+   100→| Historical value | 25 | LTV / premium paid |
+   101→| Recency | 20 | days since last activity/lapse |
+   102→| Payment history | 15 | success ratio, failed-debit flags |
+   103→| Contactability | 15 | valid WhatsApp number, email |
+   104→| Offer availability | 10 | product live, rejoin window open |
+   105→| Prior engagement | 10 | responded before, opt-in status |
+   106→| Data completeness | 5 | required fields present |
+   107→
+   108→Output: `score 0–100`, `estimated_value`, `reasons[]`, `risks[]`, `recommended_action`. Same input ⇒ same score (unit-tested).
+   109→
+   110→**D. RecoveryOpportunity (core domain object):**
+   111→
+   112→```ts
+   113→{ id, tenantId, customerId, sourceRecordId, category, score,
+   114→  estimatedValue, status, reason, recommendedAction, createdAt, updatedAt }
+   115→// statuses: new | qualified | queued | contacted | engaged | negotiating
+   116→// | converted | recovered | declined | unresponsive | failed | suppressed
+   117→```
+   118→
+   119→**E. Customer 360:** contact details, score, estimated vs previous value, status, full event timeline (quote → failed payment → messages → replies → offer → payment).
+   120→
+   121→**F. Campaigns:** name, vertical, audience filters, min score, channel, message strategy, send limits, business hours (default Mon–Fri 09:00–17:00 SAST), suppression (opt-outs/DNC/disputed), escalation rules, approved-offer rules, stop conditions.
+   122→
+   123→**G. WhatsApp (primary channel):** Evolution API behind one typed adapter only.
+   124→
+   125→```ts
+   126→interface MessagingProvider { sendMessage(...); sendTemplate(...); getStatus(...) }
+   127→// src/lib/integrations/evolution/ — no WhatsApp calls anywhere else
+   128→```
+   129→
+   130→Inbound webhooks verified + idempotent; messages persisted; delivery states tracked; conversations linked to opportunities.
+   131→
+   132→**H. AI Recovery Agent (Vercel AI SDK):** empathetic revenue-recovery conversations; intent detection; objection handling; presents *approved* options only; triggers payment flow; escalates to human; honours opt-out instantly. Tools (each: authenticate → tenant → authorize → Zod → service → audit):
+   133→
+   134→```text
+   135→customer.get / customer.update / customer.opt_out
+   136→recovery.get_opportunity / recovery.update_status
+   137→campaign.get_context / product.get_available_options / pricing.get_allowed_offer
+   138→payment.create_request / payment.get_status
+   139→conversation.get_history / human.escalate
+   140→```
+   141→
+   142→**Guardrails:** AI may read context/approved offers/payment status; may send messages, create payment requests, update status, escalate, opt out. AI may **never** invent prices/discounts/terms, confirm payments, mark revenue recovered, delete data, bypass limits, ignore opt-outs. **Privacy:** context minimization — only task-relevant fields sent to the model (POPIA by design).
+   143→
+   144→**I. Payments:** `PaymentProvider` abstraction, **Ozow Instant EFT first**. Confirmation **only** via verified, idempotent webhooks: `webhook → verify → persist → PaymentConfirmed → opportunity=recovered → analytics updated`. Browser redirects are never proof of payment.
+   145→
+   146→**J. Attribution:** Contacted / Engaged / Converted / **Recovered (verified only)**. Metrics: pipeline counts, potential vs expected vs actual recovered revenue, recovery & conversion rates, revenue per opportunity, campaign ROI, AI resolution rate, escalation rate, opt-out rate.
+   147→
+   148→**K. Screen inventory (match mockups):** marketing landing; auth; onboarding; import wizard; customers list; Customer 360; opportunities queue; campaigns list + builder; conversations inbox (badge counts); payments; analytics; integrations; settings; dashboard per `dashboard.png`.
+   149→
+   150→## 5. Domain Events
+   151→
+   152→`CustomerImported, RecoveryOpportunityCreated, RecoveryScoreCalculated, CampaignCreated, CampaignStarted, MessageSent, MessageReceived, CustomerEngaged, OfferPresented, PaymentRequested, PaymentConfirmed, RecoveryConverted, RevenueRecovered, ConversationEscalated, CustomerOptedOut` — persisted/auditable.
+   153→
+   154→## 6. Mandatory NahaLabs Stack
+   155→
+   156→Next.js App Router · TypeScript strict · Tailwind + shadcn/ui · React Hook Form + Zod · TanStack Query · Zustand only where needed · Clerk · Neon PostgreSQL + Drizzle · Vercel AI SDK (never raw provider SDKs; no LangChain/LlamaIndex) · Vercel Blob · Upstash Redis · Evolution API on Render · Vercel deploy · Playwright E2E. **No** custom auth, microservices, Kubernetes, or split repos.
+   157→
+   158→**Repository:**
+   159→
+   160→```text
+   161→src/app/(marketing)/ (app)/dashboard customers opportunities campaigns conversations analytics settings
+   162→src/app/api/v1/ webhooks/evolution webhooks/payments jobs/ mcp/[...route]/
+   163→src/modules/ tenants users customers imports recovery campaigns conversations messaging payments analytics ai audit
+   164→src/lib/db/schema queries · lib/integrations/evolution payments · lib/ai/providers tools prompts evals · lib/events security cache
+   165→src/shared/ types validation errors constants
+   166→```
+   167→
+   168→**Database (every business table has `tenant_id`; isolation enforced in the data-access layer; UI never touches DB; route handlers stay thin):** tenants, users, memberships, customers, customer_contacts, customer_events, imports, import_records, import_errors, recovery_opportunities, recovery_scores, recovery_events, campaigns, campaign_members, campaign_events, conversations, conversation_messages, payment_requests, payments, activity_events, audit_logs, ai_conversations, ai_tool_calls, integration_connections, webhook_events.
+   169→
+   170→**MCP (`/api/mcp/[...route]`):** tools `customers.search/get, recovery.list/get, campaigns.list/get, conversations.get, payments.get, analytics.summary, diagnostics.run` through pipeline Clerk → Tenant → RBAC → tool authorization → Zod → service → audit. Never raw DB access.
+   171→
+   172→**Security/POPIA:** server-side authorization, RBAC, Zod everywhere, rate limiting, webhook verification + idempency, audit logs, CSP/HSTS/secure headers, sanitized size-limited uploads, secret management, dependency scanning, consent + opt-out handling, data minimization, retention rules.
+   173→
+   174→## 7. Execution Plan (one phase per Copilot session)
+   175→
+   176→- **Phase 0 — Repo audit.** No code. Produce `ARCHITECTURE_AUDIT.md` (exists / reuse / change / violations / risks). No duplicate files.
+   177→- **Phase 1 — Foundation.** Stack + Clerk + Neon + Drizzle + tenant context + RBAC + errors/logging/headers. *Acceptance: `npm run build` passes with zero env vars.*
+   178→- **Phase 2 — Domain layer.** Services first (Customer/Import/Recovery/Campaign/Conversation/Payment). *Acceptance: unit tests + tenant-isolation test green.*
+   179→- **Phase 3 — Imports + customers.** Mapping, validation, preview, dedupe, E.164 normalization, lists + Customer 360. *Acceptance: realistic SA CSV imports cleanly.*
+   180→- **Phase 4 — Scoring.** Deterministic engine per §4C. *Acceptance: explainability + stability tests green.*
+   181→- **Phase 5 — Campaign engine.** Audience, qualification, preview, start/pause, limits, hours, suppression. *Acceptance: dry-run queue correct; zero messages sent.*
+   182→- **Phase 6 — WhatsApp.** EvolutionAdapter + webhooks + idempotency + persistence. *Acceptance: sandbox send/receive + duplicate-webhook test green.*
+   183→- **Phase 7 — AI agent.** One agent, ToolRegistry, PromptRegistry, guardrails, golden evals. *Acceptance: eval suite passes; hallucination/injection tests green.*
+   184→- **Phase 8 — Payments.** Ozow adapter, verified idempotent webhooks, attribution. *Acceptance: revenue only from verified webhooks (tested).*
+   185→- **Phase 9 — Dashboard + analytics.** Match `dashboard.png`; metrics reconcile with payments table.
+   186→- **Phase 10 — MCP.** Tools + RBAC + audit. *Acceptance: unauthorized tool calls rejected in tests.*
+   187→- **Phase 11 — Testing.** Unit/integration/E2E incl. critical journey: sign up → tenant → import → opportunities → campaign → WhatsApp → AI reply → payment request → webhook → recovered → dashboard updated.
+   188→- **Phase 12 — Hardening.** Full checklist: prod Clerk/Neon/Evolution, migrations, webhook idempotency, rate limits, tenant isolation, AI injection/hallucination, opt-out, POPIA review, audit logs, headers, Vercel prod, Playwright prod, selftest endpoint 200.
+   189→
+   190→## 8. Production Definition of Done
+   191→
+   192→Imports safe ✔ · scores explainable ✔ · WhatsApp reliable ✔ · AI tool-grounded, cannot invent commercial facts ✔ · recovered revenue only from verified webhooks ✔ · tenant A can't see tenant B ✔ · duplicate webhooks cause no duplicate actions ✔ · every recovery action traceable ✔ · critical E2E passes against production ✔ · system can answer *"How much revenue did 2ndLife actually recover?"* ✔
+   193→
+   194→## 9. Copilot Operating Instructions
+   195→
+   196→You are the senior engineer implementing 2ndLife. The PRD above is the product specification; the NahaLabs stack is mandatory. Rules: 1. Don't invent requirements. 2. Don't replace the stack. 3. No microservices unless required. 4. No custom auth. 5. Clerk mandatory. 6. Neon + Drizzle mandatory. 7. Next.js App Router mandatory. 8. TS strict mandatory. 9. Vercel AI SDK only. 10. Never import provider SDKs directly. 11. No LangChain/LlamaIndex. 12. Logic in services, not prompts. 13. UI never touches DB. 14. Thin route handlers. 15. Every business table tenant-scoped. 16. Typed adapter per integration. 17. Webhooks verified + idempotent. 18. Payments confirmed only by verified webhooks. 19. AI never invents prices/status/offers/facts. 20. Destructive actions need explicit authorization. 21. No raw DB access via MCP. 22. No duplicate files (`*-v2.ts`). 23. Search repo before creating. 24. Reuse existing code. 25. No unrelated refactors. 26. Small reviewable changes. 27. Typecheck after meaningful changes. 28. Tests after meaningful changes. 29. Production build before completing a phase. 30. Never claim success without verification. UI work must match the companion design assets exactly (logo unchanged). Method: per phase — inspect repo → list files to change → implement only that phase → validate → report honestly (files changed, decisions, commands, tests, failures, remaining work, readiness). Never build multiple phases in one session. <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+   197→<title>2ndLife — Inner Screen Mockups (Option 2 language)</title>
+   198→<style>
+   199→:root{--ink:#0b1220;--mut:#5c6b64;--bg:#f6f8f7;--card:#fff;--line:#e4eae6;--g900:#0a3b2c;--g:#16a34a;--gd:#15803d;--soft:#e9f6ee;--or:#f59e0b}
+   200→*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}body{margin:0;background:var(--bg);color:var(--ink)}
+   201→h1.cap{max-width:1280px;margin:40px auto 12px;font-size:15px;color:var(--mut);font-weight:600}
+   202→.screen{max-width:1280px;margin:0 auto 48px;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;min-height:760px}
+   203→.side{width:225px;background:var(--g900);color:#cfe5d8;padding:20px 12px;flex-shrink:0}
+   204→.logo{color:#fff;font-weight:800;font-size:19px;margin:0 8px 20px}.logo em{color:var(--g);font-style:normal}
+   205→.side a{display:block;padding:9px 12px;border-radius:10px;color:#cfe5d8;text-decoration:none;font-size:13.5px;margin-bottom:2px}
+   206→.side a.on{background:var(--g);color:#fff;font-weight:600}.side .bd{margin-top:26px;background:#0d4634;border:1px solid #14604a;border-radius:12px;padding:12px;font-size:12px}
+   207→.main{flex:1;padding:24px 28px;min-width:0}h1{font-size:21px;margin:0 0 3px}.sub{color:var(--mut);font-size:13px;margin:0 0 18px}
+   208→.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+   209→.grid{display:grid;gap:14px}.g4{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:2fr 1fr}.g3{grid-template-columns:240px 1fr 280px;flex:1}
+   210→.badge{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600}
+   211→.b-g{background:var(--soft);color:var(--gd)}.b-o{background:#fef3c7;color:#b45309}.b-r{background:#fee2e2;color:#b91c1c}.b-x{background:#eef1f0;color:#475549}
+   212→.btn{background:var(--g);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;font-size:13px;cursor:pointer}
+   213→.btn.gh{background:#fff;color:var(--ink);border:1px solid var(--line)}.btn.dis{opacity:.45}
+   214→table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;color:var(--mut);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;border-bottom:1px solid var(--line)}
+   215→td{padding:9px 10px;border-bottom:1px solid #f0f4f1;vertical-align:top}
+   216→.steps{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}.step{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+   217→.step .n{width:22px;height:22px;border-radius:50%;background:#eef1f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}
+   218→.step.done .n{background:var(--soft);color:var(--gd)}.step.on .n{background:var(--g);color:#fff}.step.on{color:var(--ink);font-weight:600}
+   219→.drop{border:2px dashed #bcd7c6;border-radius:12px;padding:20px;text-align:center;color:var(--mut);background:#fbfefc;font-size:13px}
+   220→.kpi .v{font-size:21px;font-weight:800}.kpi .l{font-size:11.5px;color:var(--mut);margin-bottom:2px}.kpi .d{font-size:11px;color:var(--gd);font-weight:600}
+   221→.bubble{max-width:78%;padding:10px 12px;border-radius:12px;font-size:13px;margin:6px 0;line-height:1.45}
+   222→.ai{background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+   223→.cu{background:#dcfce7;margin-left:auto;border-bottom-right-radius:4px}
+   224→.sys{background:var(--soft);border:1px solid #bfe6cc;border-radius:12px;padding:10px 12px;font-size:12.5px;margin:8px 0}
+   225→.row{padding:10px 12px;border-bottom:1px solid #f0f4f1;font-size:13px;cursor:pointer}.row.on{background:var(--soft);border-left:3px solid var(--g)}
+   226→.tl{border-left:2px solid var(--line);margin:6px 0 6px 6px;padding-left:16px}.tl li{margin:0 0 12px;font-size:13px;list-style:none;position:relative}
+   227→.tl li::before{content:"";position:absolute;left:-21px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--g)}
+   228→.tl li.warn::before{background:var(--or)}.tl li.bad::before{background:#dc2626}
+   229→.chip{display:inline-block;background:#eef1f0;border-radius:8px;padding:4px 8px;font-size:11.5px;margin:0 6px 6px 0}
+   230→.lab{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px}
+   231→input,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px}
+   232→hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+   233→</style></head><body>
+   234→
+   235→<h1 class="cap">SCREEN 1 — /app/imports/new · Import Wizard (Upload → Map → Validate → Preview → Import)</h1>
+   236→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   237→<a>Dashboard</a><a>Campaigns</a><a>Conversations</a><a>Payments</a><a>Policies</a><a>Contacts</a><a class="on">Imports</a><a>Reports</a><a>Integrations</a><a>Settings</a></div>
+   238→<div class="main">
+   239→<h1>New import</h1><p class="sub">Lapsed policies · Funeral insurance vertical · CSV</p>
+   240→<div class="steps"><span class="step done"><span class="n">✓</span>Upload</span><span class="step done"><span class="n">✓</span>Map columns</span><span class="step on"><span class="n">3</span>Validate</span><span class="step"><span class="n">4</span>Preview</span><span class="step"><span class="n">5</span>Import</span></div>
+   241→<div class="grid g2">
+   242→ <div>
+   243→  <div class="drop"><b>lapsed_policies_may.csv</b> · 10,000 rows · 2.1 MB · uploaded 09:41</div>
+   244→  <div class="lab">Column mapping</div>
+   245→  <div class="card" style="padding:6px 10px"><table>
+   246→   <tr><th>CSV column</th><th>2ndLife field</th><th>Rule</th></tr>
+   247→   <tr><td>phone</td><td>Phone</td><td>SA normalize → E.164 (+27…)</td></tr>
+   248→   <tr><td>email</td><td>Email</td><td>Zod email validation</td></tr>
+   249→   <tr><td>amount</td><td>Amount</td><td>ZAR, comma-safe parse</td></tr>
+   250→   <tr><td>status</td><td>Status</td><td>map: "lapsed"/"failed_debit"</td></tr>
+   251→   <tr><td>last_activity</td><td>Last Activity</td><td>ISO date</td></tr>
+   252→   <tr><td colspan="3" style="color:var(--mut)">+6 more mapped (customer_id, names, product, expiry_date, payment_status)</td></tr>
+   253→  </table></div>
+   254→  <div class="lab">Validation</div>
+   255→  <div class="grid g4" style="grid-template-columns:repeat(4,1fr)">
+   256→   <div class="card kpi"><div class="l">Valid rows</div><div class="v">9,412</div></div>
+   257→   <div class="card kpi"><div class="l">Duplicates merged</div><div class="v">388</div></div>
+   258→   <div class="card kpi"><div class="l">Phones normalized</div><div class="v">142</div></div>
+   259→   <div class="card kpi"><div class="l">Errors</div><div class="v" style="color:#b91c1c">58</div></div>
+   260→  </div>
+   261→  <div class="card" style="margin-top:14px;font-size:12.5px;color:var(--mut)">58 rows missing phone → excluded with row-level report (download). Errors never block valid rows.</div>
+   262→ </div>
+   263→ <div>
+   264→  <div class="lab" style="margin-top:0">Preview (normalized)</div>
+   265→  <div class="card" style="padding:6px 10px"><table>
+   266→   <tr><th>Customer</th><th>Phone</th><th>Status</th><th>Amount</th></tr>
+   267→   <tr><td>Thabo Mokoena</td><td>+27721234567</td><td><span class="badge b-o">Lapsed</span></td><td>R4,800</td></tr>
+   268→   <tr><td>Lerato Khumalo</td><td>+27821234567</td><td><span class="badge b-r">Failed debit</span></td><td>R1,950</td></tr>
+   269→   <tr><td>Sipho Dlamini</td><td>+27731234567</td><td><span class="badge b-o">Lapsed</span></td><td>R3,600</td></tr>
+   270→   <tr><td>Palesa Radebe</td><td>+27841234567</td><td><span class="badge b-x">Dormant</span></td><td>R2,400</td></tr>
+   271→  </table></div>
+   272→  <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end"><button class="btn gh">Back</button><button class="btn">Continue to preview →</button></div>
+   273→ </div>
+   274→</div></div></div>
+   275→
+   276→<h1 class="cap">SCREEN 2 — /app/customers/cus_8412 · Customer 360</h1>
+   277→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   278→<a>Dashboard</a><a>Campaigns</a><a>Conversations</a><a>Payments</a><a>Policies</a><a class="on">Contacts</a><a>Imports</a><a>Reports</a><a>Settings</a></div>
+   279→<div class="main">
+   280→<h1>Thabo Mokoena <span class="badge b-o">Lapsed</span> <span class="badge b-g">WhatsApp valid</span> <span class="badge b-x">POPIA consent on file</span></h1>
+   281→<p class="sub">+27721234567 · thabo.m@…co.za · Customer since Mar 2022 · Funeral cover R150/mo</p>
+   282→<div class="grid g4" style="margin-bottom:16px">
+   283→ <div class="card kpi"><div class="l">Recovery score</div><div class="v">87<span style="font-size:12px;color:var(--mut)">/100</span></div><div class="d">Explainable · deterministic</div></div>
+   284→ <div class="card kpi"><div class="l">Estimated recovery</div><div class="v">R4,800</div></div>
+   285→ <div class="card kpi"><div class="l">Previous value</div><div class="v">R7,200</div></div>
+   286→ <div class="card kpi"><div class="l">Inactive</div><div class="v">8 mo</div><div class="d" style="color:#b45309">risk factor −8</div></div>
+   287→</div>
+   288→<div class="grid g2">
+   289→ <div class="card"><div class="lab" style="margin-top:0">Timeline</div>
+   290→  <ul class="tl">
+   291→   <li><b>Quote created</b> · Mar 2022 · R150/mo funeral cover</li>
+   292→   <li><b>Payments normal</b> · 22 on-time payments · R3,300 lifetime</li>
+   293→   <li class="bad"><b>Debit order failed</b> · Jan 2025 · reason: insufficient funds</li>
+   294→   <li class="warn"><b>Policy lapsed</b> · Feb 2025 · no arrears owed</li>
+   295→   <li><b>WhatsApp sent</b> · May 12 · campaign "May Reactivation"</li>
+   296→   <li><b>Customer replied</b> · May 12 · objection: price</li>
+   297→   <li><b>AI conversation</b> · intent detected: restart, price-sensitive</li>
+   298→   <li class="warn"><b>Payment requested</b> · R150.00 via Ozow · awaiting confirmation</li>
+   299→  </ul>
+   300→  <div class="lab">Score reasons</div>
+   301→  <div><span class="chip">+ previously paid</span><span class="chip">+ high historical value</span><span class="chip">+ valid WhatsApp</span><span class="chip">+ offer available</span><span class="chip" style="background:#fef3c7">− inactive 8 months</span></div>
+   302→ </div>
+   303→ <div>
+   304→  <div class="card"><div class="lab" style="margin-top:0">Recommended action</div>
+   305→   <p style="font-size:13px;margin:4px 0 12px">Present approved lower-cost restart offer (R150/mo, no arrears). Empathetic tone; escalate after 2 objections.</p>
+   306→   <button class="btn" style="width:100%">Start WhatsApp conversation</button>
+   307→   <button class="btn gh" style="width:100%;margin-top:8px">Escalate to human</button>
+   308→   <button class="btn gh" style="width:100%;margin-top:8px;color:#b91c1c">Suppress customer</button>
+   309→  </div>
+   310→  <div class="card" style="margin-top:14px;font-size:12px;color:var(--mut)">AI context minimization: only name, product, lapse reason and approved offer band are shared with the model. Full record never leaves tenant storage. <br><br><b>Opt-out:</b> active consent · honoured instantly on reply "STOP".</div>
+   311→ </div>
+   312→</div></div></div>
+   313→
+   314→<h1 class="cap">SCREEN 3 — /app/conversations · AI Recovery Inbox</h1>
+   315→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   316→<a>Dashboard</a><a>Campaigns</a><a class="on">Conversations</a><a>Payments</a><a>Policies</a><a>Contacts</a><a>Reports</a><a>Settings</a></div>
+   317→<div class="main" style="display:flex;flex-direction:column">
+   318→<div style="display:flex;gap:8px;margin-bottom:14px"><span class="badge b-x">All 128</span><span class="badge b-o">Awaiting human 12</span><span class="badge b-g">Engaged 43</span><span class="badge b-r">Opted-out 6</span></div>
+   319→<div class="grid g3" style="flex:1;min-height:0">
+   320→ <div class="card" style="padding:0;overflow:hidden">
+   321→  <div class="row on"><b>Thabo M.</b> <span class="badge b-g">engaged</span><br><span style="color:var(--mut);font-size:12px">score 87 · R4,800 · 2m ago</span></div>
+   322→  <div class="row"><b>Lerato K.</b> <span class="badge b-o">awaiting human</span><br><span style="color:var(--mut);font-size:12px">objection: affordability · 9m</span></div>
+   323→  <div class="row"><b>Sipho D.</b> <span class="badge b-g">recovered</span><br><span style="color:var(--mut);font-size:12px">R150 paid via Ozow · 12m</span></div>
+   324→  <div class="row"><b>Palesa R.</b> <span class="badge b-r">opted-out</span><br><span style="color:var(--mut);font-size:12px">STOP honoured · 1h</span></div>
+   325→ </div>
+   326→ <div class="card" style="overflow:hidden;display:flex;flex-direction:column">
+   327→  <div style="display:flex;justify-content:space-between;font-size:13px"><b>Thabo Mokoena</b><span class="badge b-o">intent: restart · price-sensitive</span></div><hr>
+   328→  <div style="flex:1;overflow:auto;background:#f9fbfa;border-radius:10px;padding:10px">
+   329→   <div class="bubble ai">Hi Thabo, your cover lapsed in Jan. You don't owe arrears. Want to restart for R150/mo?</div>
+   330→   <div class="bubble cu">I stopped because it was too expensive.</div>
+   331→   <div class="bubble ai">I understand. We may be able to look at a lower-cost option. Would you like me to check what is available?</div>
+   332→   <div class="bubble cu">Yes, let's do it!</div>
+   333→   <div class="bubble ai">Great — here is your secure payment request: <b>R150.00 · Ozow Instant EFT</b>. No debit order needed.</div>
+   334→   <div class="sys">✓ <b>Payment Successful</b> · R150.00 paid via Ozow · policy FS-12345 reactivated · webhook verified</div>
+   335→  </div>
+   336→  <div style="margin-top:10px"><input placeholder="Add internal note (human only — never sent to customer)"></div>
+   337→ </div>
+   338→ <div>
+   339→  <div class="card"><div class="lab" style="margin-top:0">Opportunity</div>
+   340→   <table style="font-size:12.5px"><tr><td>Category</td><td><b>Lapsed policy</b></td></tr><tr><td>Score</td><td><b>87</b></td></tr><tr><td>Est. value</td><td><b>R4,800</b></td></tr><tr><td>Recovered</td><td><b>R150</b> (first premium)</td></tr></table></div>
+   341→  <div class="card" style="margin-top:14px"><div class="lab" style="margin-top:0">Guardrails</div>
+   342→   <p style="font-size:12px;color:var(--mut);margin:4px 0">Prices & offers sourced only from <code>pricing.get_allowed_offer</code>. Payment confirmed only by verified Ozow webhook. AI cannot invent facts, delete data or bypass limits.</p>
+   343→   <button class="btn gh" style="width:100%">Take over conversation</button>
+   344→   <button class="btn gh" style="width:100%;margin-top:8px;color:#b91c1c">Record opt-out</button></div>
+   345→ </div>
+   346→</div></div></div>
+   347→
+   348→<h1 class="cap">SCREEN 4 — /app/campaigns/new · Campaign Builder</h1>
+   349→<div class="screen"><div class="side"><div class="logo"><em>↻</em> 2ndLife</div>
+   350→<a>Dashboard</a><a class="on">Campaigns</a><a>Conversations</a><a>Payments</a><a>Policies</a><a>Contacts</a><a>Reports</a><a>Settings</a></div>
+   351→<div class="main"><div class="grid g2" style="grid-template-columns:1fr 320px">
+   352→ <div>
+   353→  <h1>New campaign</h1><p class="sub">Funeral insurance vertical · WhatsApp channel</p>
+   354→  <div class="card"><div class="lab" style="margin-top:0">1 · Details</div>
+   355→   <input value="August Win-back"> <div style="margin-top:8px"><span class="chip">vertical: funeral-insurance (config package)</span></div></div>
+   356→  <div class="card" style="margin-top:14px"><div class="lab" style="margin-top:0">2 · Audience</div>
+   357→   <div><span class="chip">inactive &gt; 90 days</span><span class="chip">score ≥ 70</span><span class="chip">WhatsApp valid</span><span class="chip">not suppressed</span></div>
+   358→   <div class="grid g2" style="grid-template-columns:1fr 1fr;margin-top:8px">
+   359→    <div class="kpi card"><div class="l">Qualified audience</div><div class="v">1,842</div></div>
+   360→    <div class="kpi card"><div class="l">Est. recoverable</div><div class="v">R3.2M</div></div></div></div>
+   361→  <div class="card" style="margin-top:14px"><div class="lab" style="margin-top:0">3 · Channel & message</div>
+   362→   <div class="bubble ai" style="margin:0">Empathetic reactivation template · acknowledges lapse reason · presents approved offer only · STOP honoured instantly</div></div>
+   363→  <div class="grid g2" style="margin-top:14px">
+   364→   <div class="card"><div class="lab" style="margin-top:0">4 · Limits & hours</div>
+   365→    <table style="font-size:12.5px"><tr><td>Send cap</td><td><b>200 msgs/hour</b></td></tr><tr><td>Business hours</td><td><b>Mon–Fri 09:00–17:00 SAST</b></td></tr><tr><td>Retries</td><td><b>2, 48h apart</b></td></tr></table></div>
+   366→   <div class="card"><div class="lab" style="margin-top:0">5 · Offers & escalation</div>
+   367→    <table style="font-size:12.5px"><tr><td>Offer band</td><td><b>R150/mo restart, no arrears</b></td></tr><tr><td>Escalate</td><td><b>after 2 objections</b></td></tr><tr><td>Auto-stop</td><td><b>opt-out rate &gt; 2%</b></td></tr></table></div>
+   368→  </div>
+   369→ </div>
+   370→ <div>
+   371→  <div class="card" style="position:sticky;top:0">
+   372→   <div class="lab" style="margin-top:0">Review</div>
+   373→   <p style="font-size:13px"><span class="badge b-g">dry-run: ON</span></p>
+   374→   <table style="font-size:12.5px"><tr><td>Audience qualified</td><td>✓</td></tr><tr><td>Suppression applied (6)</td><td>✓</td></tr><tr><td>Template approved</td><td>✓</td></tr><tr><td>Rate limits set</td><td>✓</td></tr><tr><td>Webhook idempotency</td><td>✓</td></tr></table>
+   375→   <hr><button class="btn gh" style="width:100%">Run dry-run</button>
+   376→   <button class="btn dis" style="width:100%;margin-top:8px">Launch campaign</button>
+   377→   <p style="font-size:11.5px;color:var(--mut);margin:10px 0 0">Launch unlocks only after a passing dry-run. No real WhatsApp messages are sent until then.</p>
+   378→  </div>
+   379→ </div>
+   380→</div></div></div>
+   381→</body></html>, <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 220" role="img" aria-label="2ndLife — Revenue Recovery Intelligence">
+   382→  <!-- Variant usage:  dark bg → style="color:#fff"  |  light bg → style="color:#052e22"
+   383→       Monochrome: change the two mark fills below to currentColor -->
+   384→  <g id="mark"><!-- circular recovery arrow -->
+   385→    <circle cx="110" cy="105" r="78" fill="none" stroke="#16a34a" stroke-width="16"
+   386→            stroke-linecap="round" stroke-dasharray="402 88" transform="rotate(-52 110 105)"/>
+   387→    <path d="M148 12 L192 30 L150 52 Z" fill="#16a34a"/>
+   388→  </g>
+   389→  <g id="wordmark" fill="currentColor" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-weight="800">
+   390→    <text x="70" y="128" font-size="76">2</text>
+   391→    <text x="116" y="128" font-size="46">nd</text>
+   392→    <text x="205" y="128" font-size="76">Life</text>
+   393→  </g>
+   394→  <text x="208" y="163" font-family="Inter, Arial, sans-serif" font-size="15" letter-spacing="3.2"
+   395→        fill="currentColor" opacity="0.72">REVENUE RECOVERY INTELLIGENCE</text>
+   396→</svg> ,# e.g. 2000px wide for 4K timelines
+   397→npx --yes @resvg/resvg-cli 2ndlife-logo.svg logo@2000.png --width 2000
+   398→# or: rsvg-convert -w 2000 -o logo@2000.png 2ndlife-logo.svg, All three deliverables below. First, the skills I applied/recommend (verified live): Anthropic's official **frontend-design** skill (distinctive, intentional UI; no default blue/purple gradients; semantic color; accessibility) [[2]], **ui-ux-pro-max** for design-system/accessibility review [[10]], a **design-review** skill for WCAG audits [[12]], and for the logo pack the **logo-designer / svg-logo-designer** pattern (production-ready SVG, iterative refinement) [[17]]. Note: VS Code Copilot doesn't auto-load Claude Code skills, so I've baked the relevant skill rules directly into the prompts and mockups.
+   399→
+   400→---
+
+[showing lines 1-400 of 6663; use offset=401 with limit to continue reading]
