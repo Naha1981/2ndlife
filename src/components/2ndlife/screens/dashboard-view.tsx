@@ -46,7 +46,7 @@ export function DashboardView() {
           iconBg="bg-blue-50"
           iconColor="text-blue-600"
           icon="users"
-          label="Policies Reactivated"
+          label="Customers Reactivated"
           value={formatNumber(kpis.policiesReactivated.value)}
           delta={kpis.policiesReactivated.delta}
         />

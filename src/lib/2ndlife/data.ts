@@ -83,7 +83,7 @@ export interface Campaign {
 
 export const kpis = {
   revenueRecovered: { value: 1248750, delta: 18.6, label: "Revenue Recovered" },
-  policiesReactivated: { value: 3842, delta: 12.4, label: "Policies Reactivated" },
+  policiesReactivated: { value: 3842, delta: 12.4, label: "Customers Reactivated" },
   conversations: { value: 8642, delta: 15.7, label: "Conversations" },
   paymentsReceived: { value: 2156, delta: 20.1, label: "Payments Received" },
 };
@@ -99,11 +99,11 @@ export const revenueTrend = [
 ];
 
 export const recoveryFunnel = [
-  { stage: "Lapsed Policies Uploaded", count: 10000, pct: 100, color: "#16a34a" },
+  { stage: "Recovery Opportunities Uploaded", count: 10000, pct: 100, color: "#16a34a" },
   { stage: "Messages Sent", count: 8642, pct: 86.4, color: "#15803d" },
   { stage: "Engaged", count: 3748, pct: 43.4, color: "#34d399" },
   { stage: "Payments Made", count: 2156, pct: 24.9, color: "#f59e0b" },
-  { stage: "Policies Reactivated", count: 3842, pct: 38.4, color: "#6ee7b7" },
+  { stage: "Customers Reactivated", count: 3842, pct: 38.4, color: "#6ee7b7" },
 ];
 
 export const totalRecovered = {

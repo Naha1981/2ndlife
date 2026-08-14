@@ -2,6 +2,7 @@
 
 import { useAppStore } from "@/lib/2ndlife/store";
 import { LandingPage } from "@/components/2ndlife/landing/landing-page";
+import { FuneralInsurancePage } from "@/components/2ndlife/landing/funeral-insurance-page";
 import { AppShell } from "@/components/2ndlife/app/app-shell";
 import { DashboardView } from "@/components/2ndlife/screens/dashboard-view";
 import { ImportWizardView } from "@/components/2ndlife/screens/import-wizard-view";
@@ -19,9 +20,13 @@ import {
 
 export default function Home() {
   const view = useAppStore((s) => s.view);
+  const marketingView = useAppStore((s) => s.marketingView);
 
-  // Landing is rendered outside the app shell
+  // Marketing pages render outside the app shell
   if (view === "landing") {
+    if (marketingView === "funeral-insurance") {
+      return <FuneralInsurancePage />;
+    }
     return <LandingPage />;
   }
 
