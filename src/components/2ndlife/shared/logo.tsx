@@ -25,6 +25,8 @@ export function Logo({
   const color = variant === "light" ? "#ffffff" : "#052e22";
   // viewBox is 720×220, so width = height × (720/220) ≈ height × 3.27
   const width = Math.round(height * 3.27);
+  // Tagline is unreadable below 56px — render wordmark only at smaller sizes
+  const showTaglineResolved = showTagline && height >= 56;
 
   return (
     <svg
@@ -58,8 +60,8 @@ export function Logo({
         <text x="116" y="128" fontSize="46">nd</text>
         <text x="205" y="128" fontSize="76">Life</text>
       </g>
-      {/* Tagline — inherits currentColor, slightly transparent */}
-      {showTagline && (
+      {/* Tagline — only at height >= 56px to avoid unreadable thin line */}
+      {showTaglineResolved && (
         <text
           x="208"
           y="163"

@@ -83,19 +83,26 @@ export interface Campaign {
 
 export const kpis = {
   revenueRecovered: { value: 1248750, delta: 18.6, label: "Revenue Recovered" },
-  policiesReactivated: { value: 3842, delta: 12.4, label: "Customers Reactivated" },
+  customersReactivated: { value: 1842, delta: 12.4, label: "Customers Reactivated" },
   conversations: { value: 8642, delta: 15.7, label: "Conversations" },
   paymentsReceived: { value: 2156, delta: 20.1, label: "Payments Received" },
 };
 
+// Generate dates relative to today so "vs last 7 days" is truthful
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toLocaleDateString("en-ZA", { month: "short", day: "numeric" });
+}
+
 export const revenueTrend = [
-  { date: "May 12", value: 142000 },
-  { date: "May 13", value: 168000 },
-  { date: "May 14", value: 154000 },
-  { date: "May 15", value: 236400 },
-  { date: "May 16", value: 198000 },
-  { date: "May 17", value: 221000 },
-  { date: "May 18", value: 268750 },
+  { date: daysAgo(6), value: 142000 },
+  { date: daysAgo(5), value: 168000 },
+  { date: daysAgo(4), value: 154000 },
+  { date: daysAgo(3), value: 236400 },
+  { date: daysAgo(2), value: 198000 },
+  { date: daysAgo(1), value: 221000 },
+  { date: daysAgo(0), value: 268750 },
 ];
 
 export const recoveryFunnel = [
@@ -103,7 +110,7 @@ export const recoveryFunnel = [
   { stage: "Messages Sent", count: 8642, pct: 86.4, color: "#15803d" },
   { stage: "Engaged", count: 3748, pct: 43.4, color: "#34d399" },
   { stage: "Payments Made", count: 2156, pct: 24.9, color: "#f59e0b" },
-  { stage: "Customers Reactivated", count: 3842, pct: 38.4, color: "#6ee7b7" },
+  { stage: "Customers Reactivated", count: 1842, pct: 18.4, color: "#6ee7b7" },
 ];
 
 export const totalRecovered = {

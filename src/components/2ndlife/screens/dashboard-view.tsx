@@ -47,8 +47,8 @@ export function DashboardView() {
           iconColor="text-blue-600"
           icon="users"
           label="Customers Reactivated"
-          value={formatNumber(kpis.policiesReactivated.value)}
-          delta={kpis.policiesReactivated.delta}
+          value={formatNumber(kpis.customersReactivated.value)}
+          delta={kpis.customersReactivated.delta}
         />
         <KpiCard
           iconBg="bg-brand-500/10"
@@ -170,9 +170,9 @@ export function DashboardView() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-bold text-ink">Recovery Funnel</h3>
-              <p className="text-xs text-muted-foreground">From lapsed policy to reactivation</p>
+              <p className="text-xs text-muted-foreground">From opportunity to reactivation</p>
             </div>
-            <Button variant="ghost" size="sm" className="text-xs text-brand-600 hover:text-brand-700">
+            <Button variant="ghost" size="sm" className="text-xs text-brand-600 hover:text-brand-700" onClick={() => setView("reports")}>
               View report <Icon name="arrow" size={12} className="ml-1" />
             </Button>
           </div>
@@ -205,7 +205,7 @@ export function DashboardView() {
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-ink">Recent Activity</h3>
-            <button className="text-xs text-brand-600 font-semibold hover:text-brand-700">
+            <button onClick={() => setView("reports")} className="text-xs text-brand-600 font-semibold hover:text-brand-700">
               View all
             </button>
           </div>

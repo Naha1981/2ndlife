@@ -1,17 +1,20 @@
 /**
  * 2ndLife — formatting & domain utilities
  * SA-specific: Rand currency, Africa/Johannesburg timezone, E.164 phones.
+ * ONE money formatter everywhere: space thousands, dot decimals.
+ * Example: 1248750 → "R1 248 750", 150 with decimals → "R150.00"
  */
 
+function formatMoney(amount: number, decimals: boolean): string {
+  const fixed = decimals ? amount.toFixed(2) : Math.round(amount).toString();
+  const [intPart, decPart] = fixed.split(".");
+  // Space as thousands separator
+  const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return "R" + withSpaces + (decPart ? "." + decPart : "");
+}
+
 export function formatZAR(amount: number, opts?: { decimals?: boolean }): string {
-  const decimals = opts?.decimals ? 2 : 0;
-  return (
-    "R" +
-    amount.toLocaleString("en-ZA", {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    })
-  );
+  return formatMoney(amount, opts?.decimals ?? false);
 }
 
 export function formatZARCompact(amount: number): string {
@@ -21,7 +24,7 @@ export function formatZARCompact(amount: number): string {
 }
 
 export function formatNumber(n: number): string {
-  return n.toLocaleString("en-ZA");
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
 export function formatPercent(n: number, decimals = 1): string {

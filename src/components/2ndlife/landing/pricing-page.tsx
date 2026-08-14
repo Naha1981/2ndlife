@@ -73,7 +73,7 @@ const TIERS = [
 const FAQ = [
   {
     q: "What counts as recovered revenue?",
-    a: "Only verified payments — money that actually landed in your bank account via a confirmed payment webhook. No estimates, no projections.",
+    a: "A payment confirmed by your payment provider (e.g. Ozow) and verified by webhook — never a browser redirect. If the webhook doesn't fire, it doesn't count.",
   },
   {
     q: "What if nothing is recovered?",
@@ -212,13 +212,13 @@ export function PricingPage() {
         <section className="bg-[#0a3b2c] text-white py-16 px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">
-              How pay-only-for-results works
+              How results-based pricing works
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
               {[
-                { n: 1, title: "We recover", desc: "AI engages your lapsed customers and collects payment via verified webhooks." },
-                { n: 2, title: "You pay a percentage", desc: "Only on revenue that actually lands in your bank — not promises, not projections." },
-                { n: 3, title: "Only when money lands", desc: "Verified payment webhook confirms recovery. No verification = no fee." },
+                { n: 1, title: "We recover your lost revenue", desc: "AI engages your lapsed customers and collects payment via verified webhooks." },
+                { n: 2, title: "You pay an agreed percentage", desc: "You pay 2ndLife an agreed percentage of what we recover — nothing more." },
+                { n: 3, title: "If we recover nothing, you pay nothing", desc: "No recovery = no fee. It's that simple. We only win when you win." },
               ].map((step) => (
                 <div key={step.n} className="text-center">
                   <div className="w-10 h-10 rounded-full bg-[#16a34a] text-white font-bold flex items-center justify-center mx-auto mb-3">
