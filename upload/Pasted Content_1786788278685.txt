@@ -1,0 +1,1882 @@
+Yes. The right way to give this to the coding agent is **not** simply “build these features.” It needs to understand the **old way → new way → measurable definition of done**.
+
+Below is the operating standard I would use for the unified **NahaLabs Revenue OS**, with **2ndLife** as the revenue-recovery layer and the other capabilities working around the same customer/revenue engine.
+
+# NahaLabs Revenue OS — Feature-by-Feature Success Standard
+
+## The big picture
+
+The system is trying to replace this:
+
+> **Ads → website → enquiries → WhatsApp → receptionist → spreadsheet → follow-up → marketing agency → social posting → CRM → payment → reporting**
+
+with this:
+
+> **DEMAND → CONTENT → SOCIAL → LEAD → WHATSAPP AI → BOOKING → PAYMENT → SERVICE → LOYALTY → RETENTION → RECOVERY → REVENUE → INTELLIGENCE**
+
+The important difference is that **everything feeds the same customer and revenue database**.
+
+---
+
+# 1. Business AI Brain / Digital Employee
+
+### What businesses currently do
+
+They give information to staff:
+
+* website
+* price lists
+* FAQs
+* service menus
+* brochures
+* SOPs
+* WhatsApp messages
+* spreadsheets
+
+Staff then manually answer customers.
+
+### What agencies currently do
+
+Agencies may:
+
+* build websites
+* write copy
+* manage social media
+* create chatbots
+* manage ads
+* create marketing strategies
+
+But these are normally separate services and systems.
+
+### What NahaLabs changes
+
+The business gets a **central Business Brain** containing:
+
+* services
+* prices
+* locations
+* opening hours
+* staff
+* FAQs
+* policies
+* promotions
+* brand voice
+* target customers
+* approved offers
+* escalation rules
+* industry-specific knowledge
+
+Every AI employee uses the same source of truth.
+
+### SUCCESS =
+
+The AI must:
+
+* answer only from approved business information
+* never invent prices/services/policies
+* know which location the customer means
+* know when it doesn't know
+* escalate uncertain/high-risk questions
+* update when business information changes
+* maintain tenant isolation
+* support multiple locations
+
+**Perfect = zero critical hallucinations in the defined test suite + correct source grounding + complete audit trail.**
+
+---
+
+# 2. AI Website / Lead Machine
+
+### Businesses currently do
+
+They either:
+
+* have no website
+* have an outdated website
+* pay a developer
+* use Wix/WordPress/etc.
+* receive enquiries by email/contact form
+* manually check submissions
+
+### Agencies currently do
+
+Agency:
+
+> strategy → copy → design → development → SEO → maintenance
+
+Then the client waits for enquiries.
+
+### NahaLabs changes
+
+The website becomes a **revenue interface**, not a brochure.
+
+It:
+
+* explains the business
+* answers questions
+* captures leads
+* obtains POPIA consent
+* qualifies leads
+* sends the lead into the CRM
+* triggers WhatsApp
+* tracks conversion
+
+### SUCCESS =
+
+A visitor must be able to:
+
+1. arrive
+2. understand the offer
+3. ask a question
+4. submit/contact
+5. receive confirmation
+6. become a lead
+7. receive AI qualification
+8. trigger owner notification
+9. enter CRM
+10. continue into WhatsApp
+
+without manual intervention.
+
+**Perfect = 100% of valid test submissions create exactly one correctly attributed lead and trigger the correct downstream workflow.**
+
+---
+
+# 3. AI Lead Qualification
+
+### Businesses currently do
+
+Someone receives:
+
+> "Hi, how much?"
+
+The owner/receptionist manually decides whether the person is serious.
+
+### Agencies currently do
+
+Agencies generate leads and send them to the business.
+
+The business still has to qualify them.
+
+### NahaLabs changes
+
+The system determines:
+
+* who the person is
+* what they want
+* urgency
+* budget where appropriate
+* service required
+* location
+* buying intent
+* lead temperature
+* recommended action
+
+Example:
+
+> 🔥 HOT — 9/10
+> Wants dental implants
+> Sandton
+> Wants consultation this week
+> Recommended action: contact immediately
+
+### SUCCESS =
+
+Every lead gets:
+
+* score
+* temperature
+* reason
+* required service
+* source
+* timestamp
+* recommended action
+* lifecycle status
+
+And the owner gets the important leads quickly.
+
+**Perfect = no lead disappears, duplicate leads are handled correctly, scoring is explainable, and every lead can be traced from source → conversation → outcome.**
+
+---
+
+# 4. WhatsApp AI Employee
+
+This is one of the **core modules**.
+
+### Businesses currently do
+
+Receptionist manually handles:
+
+* WhatsApp
+* phone calls
+* questions
+* bookings
+* quotations
+* reminders
+* follow-ups
+
+### Agencies currently do
+
+They may install:
+
+* chatbot
+* WhatsApp automation
+* CRM
+* autoresponder
+
+But often these are rigid.
+
+### NahaLabs changes
+
+WhatsApp becomes the business's:
+
+**Receptionist + Sales Assistant + Booking Assistant + Customer Service Agent + Retention Agent**
+
+24/7.
+
+### SUCCESS =
+
+The AI can:
+
+* identify customers
+* answer FAQs
+* qualify
+* recommend appropriate services
+* book
+* reschedule
+* cancel
+* send payment links
+* follow up
+* escalate
+* respect opt-outs
+* maintain conversation context
+* hand over to humans
+
+### Critical rule
+
+The AI must **never pretend to be a human** where disclosure is required, and must never provide unsafe professional/medical advice.
+
+**Perfect = complete end-to-end conversation tests pass across every supported workflow.**
+
+---
+
+# 5. Booking & Scheduling Engine
+
+### Businesses currently do
+
+Receptionists:
+
+* check calendars
+* call customers
+* WhatsApp customers
+* manually book
+* manually remind
+
+### Agencies currently do
+
+They connect Calendly, booking systems, Google Calendar, etc.
+
+But the customer journey remains fragmented.
+
+### NahaLabs changes
+
+Customer says:
+
+> "Can I come Friday afternoon?"
+
+AI determines:
+
+* service
+* duration
+* location
+* practitioner/staff
+* availability
+
+and books it.
+
+### SUCCESS =
+
+The system must correctly:
+
+* find availability
+* respect operating hours
+* respect service duration
+* prevent double booking
+* assign staff
+* confirm appointment
+* modify appointment
+* cancel appointment
+* update CRM
+* trigger reminders
+
+**Perfect = zero double bookings in automated test scenarios and every booking produces one authoritative appointment record.**
+
+---
+
+# 6. No-Show Prevention
+
+### Businesses currently do
+
+Receptionist sends:
+
+> "Reminder: you have an appointment tomorrow."
+
+Sometimes nothing happens.
+
+### Agencies currently do
+
+SMS/email reminder campaigns.
+
+### NahaLabs changes
+
+Automated:
+
+**48h → 24h → 6h → appointment**
+
+with:
+
+* confirmation
+* rescheduling
+* cancellation
+* waitlist
+* human escalation
+
+### SUCCESS =
+
+The system automatically detects:
+
+* unconfirmed appointments
+* cancelled appointments
+* available slots
+
+and attempts to fill cancellations.
+
+**Perfect = every eligible appointment receives the correct reminder sequence and every cancellation can trigger the correct waitlist workflow.**
+
+---
+
+# 7. Loyalty Engine
+
+### Businesses currently do
+
+Usually:
+
+* paper cards
+* Excel
+* generic loyalty apps
+* nothing
+
+### Agencies currently do
+
+They may design loyalty campaigns.
+
+### NahaLabs changes
+
+Customer loyalty lives in WhatsApp.
+
+Example:
+
+> JOIN
+> BALANCE
+> REDEEM
+
+The business sees:
+
+* visits
+* spend
+* rewards
+* VIPs
+* frequency
+* lifetime value
+
+### SUCCESS =
+
+Points must:
+
+* never duplicate
+* never disappear
+* have an audit trail
+* respect earning rules
+* respect redemption rules
+* prevent obvious fraud
+* connect to customer identity
+
+**Perfect = every point transaction is idempotent, auditable and mathematically correct.**
+
+---
+
+# 8. Customer 360 / CRM
+
+### Businesses currently do
+
+Customer data lives across:
+
+* WhatsApp
+* Excel
+* POS
+* booking system
+* email
+* phone
+* Facebook
+* paper records
+
+### Agencies currently do
+
+They implement CRMs.
+
+The problem is adoption.
+
+### NahaLabs changes
+
+The system automatically creates the customer profile from interactions.
+
+Customer 360 contains:
+
+* identity
+* conversations
+* bookings
+* purchases
+* payments
+* loyalty
+* campaigns
+* reviews
+* leads
+* recovery opportunities
+* lifetime value
+* preferences
+
+### SUCCESS =
+
+One customer must have **one coherent timeline** across all supported interactions.
+
+**Perfect = duplicate detection + correct identity resolution + complete chronological customer timeline.**
+
+---
+
+# 9. Demand Radar
+
+This is one of the **most important differentiators**.
+
+### Businesses currently do
+
+They ask:
+
+> "What should we post this week?"
+
+Marketing agencies often create a content calendar months in advance.
+
+### Agencies currently do
+
+They use:
+
+* content calendars
+* trends
+* competitor research
+* keyword research
+* brainstorming
+* generic AI content
+
+### NahaLabs changes
+
+The system asks:
+
+> **"What are customers actually asking for right now?"**
+
+Demand Radar monitors available signals such as:
+
+* search trends
+* search queries
+* local events
+* weather-related demand
+* recurring FAQs
+* customer conversations
+* social comments
+* social questions
+* objections
+* pricing questions
+* competitor activity where legally/technically accessible
+
+Then converts demand into opportunities.
+
+---
+
+# 10. Social Conversation & Comment Mining
+
+**YES — this is absolutely part of the final system.**
+
+It must not be forgotten.
+
+### Businesses currently do
+
+Someone occasionally checks:
+
+* Instagram comments
+* TikTok comments
+* Facebook
+* X
+* DMs
+
+Most questions disappear.
+
+### Agencies currently do
+
+Social media managers manually monitor comments and produce reports.
+
+### NahaLabs changes
+
+The system continuously identifies:
+
+> **What are customers asking publicly?**
+
+For example:
+
+> "How much is teeth whitening?"
+
+> "Does laser hair removal hurt?"
+
+> "Do you service Sandton?"
+
+> "How long does installation take?"
+
+The system groups similar questions.
+
+### SUCCESS =
+
+It must:
+
+* ingest supported social signals
+* classify questions
+* identify intent
+* identify sentiment where useful
+* detect recurring questions
+* count frequency
+* associate questions with business/service
+* prevent duplicate processing
+* create content opportunities
+
+### Critical architecture
+
+`social_questions_bank`
+
+must become a real intelligence source rather than just a storage table.
+
+**Perfect = recurring customer questions automatically become ranked content/revenue opportunities with source traceability.**
+
+---
+
+# 11. Instant Social Micro-Replies
+
+### Businesses currently do
+
+They manually answer comments.
+
+Often hours or days later.
+
+### Agencies currently do
+
+Social media managers answer comments during working hours.
+
+### NahaLabs changes
+
+When technically supported and permitted by the platform:
+
+**Comment → AI understands → approved answer → reply → CTA → WhatsApp**
+
+Example:
+
+> "Great question. Most clients need 4–6 sessions. Chat with us on WhatsApp for your personalised estimate."
+
+### SUCCESS =
+
+The system must:
+
+* detect eligible comments
+* understand intent
+* retrieve approved information
+* generate compliant response
+* attach appropriate CTA
+* avoid spam
+* escalate risky questions
+* log response
+* prevent duplicate responses
+
+**Perfect = every automated reply is traceable, grounded and policy-compliant.**
+
+---
+
+# 12. AI Content Engine
+
+### Businesses currently do
+
+They spend hours thinking:
+
+> "What should I post?"
+
+### Agencies currently do
+
+They create:
+
+* calendars
+* captions
+* carousels
+* reels
+* blogs
+* graphics
+* scripts
+
+often manually.
+
+### NahaLabs changes
+
+Demand itself triggers content.
+
+Example:
+
+**20 people ask about teeth whitening**
+
+↓
+
+AI detects pattern
+
+↓
+
+creates:
+
+* Reel
+* TikTok
+* YouTube Short
+* Instagram carousel
+* LinkedIn post
+* Facebook post
+* X post
+* Google Business content
+* caption
+* CTA
+* hashtags
+* video script
+
+### SUCCESS =
+
+Every generated piece must have:
+
+* business context
+* audience
+* objective
+* source demand
+* brand voice
+* accurate claims
+* CTA
+* platform-specific formatting
+
+**Perfect = no generic content unless intentionally requested; every demand-driven content item can be traced back to a signal.**
+
+---
+
+# 13. The 3+ Question Macro Engine
+
+This is the clever part.
+
+If:
+
+> Question A appears 4 times
+
+the system should understand:
+
+> **This is content demand.**
+
+Then automatically create a larger campaign.
+
+### SUCCESS =
+
+For configurable threshold:
+
+`frequency >= threshold`
+
+the system:
+
+1. clusters similar questions
+2. calculates demand
+3. creates content brief
+4. generates multi-platform content
+5. sends to publishing workflow
+6. tracks resulting engagement/leads/revenue
+
+**Perfect = no repeated high-frequency question remains unprocessed unless deliberately rejected.**
+
+---
+
+# 14. Automatic Social Publishing
+
+### Businesses currently do
+
+Someone manually:
+
+* creates post
+* downloads it
+* logs into Instagram
+* logs into Facebook
+* logs into LinkedIn
+* logs into TikTok
+* uploads
+* schedules
+
+### Agencies currently do
+
+Social media management platforms and social media managers handle this.
+
+### NahaLabs changes
+
+**Demand → content → publishing**
+
+automatically.
+
+Your selected infrastructure includes:
+
+**Postiz / Zernio**, depending on deployment and platform/API capability.
+
+Target channels include:
+
+* Instagram
+* Facebook
+* TikTok
+* YouTube/Shorts
+* LinkedIn
+* X
+* Threads
+* Google Business Profile
+
+### SUCCESS =
+
+A generated content package must:
+
+* reach the publishing queue
+* be correctly adapted per platform
+* publish/schedule successfully
+* record platform post ID
+* record timestamp
+* handle failures
+* retry safely
+* prevent duplicate publishing
+* report status
+
+**Perfect = zero silent publishing failures. Every post has a lifecycle: `GENERATED → APPROVED → SCHEDULED → PUBLISHED → MEASURED`.**
+
+---
+
+# 15. Content Performance Feedback Loop
+
+This is what turns the content system into an **intelligence system**.
+
+### Businesses currently do
+
+They look at:
+
+* likes
+* followers
+* views
+
+### Agencies currently do
+
+They provide monthly reports.
+
+### NahaLabs changes
+
+The system asks:
+
+> **Which content actually produced business?**
+
+Not just:
+
+> "Which post got likes?"
+
+Track:
+
+**Demand → Content → Engagement → Lead → WhatsApp → Booking → Payment → Revenue**
+
+### SUCCESS =
+
+The system can identify:
+
+* top demand topics
+* top content
+* top platform
+* leads generated
+* bookings generated
+* revenue generated
+* cost
+* ROI
+
+**Perfect = content can be traced to measurable commercial outcomes wherever platform attribution permits.**
+
+---
+
+# 16. Campaign Engine
+
+### Businesses currently do
+
+They blast:
+
+> "20% OFF!!!"
+
+to everyone.
+
+### Agencies segment audiences manually.
+
+### NahaLabs
+
+Segments automatically:
+
+* VIP
+* active
+* at-risk
+* dormant
+* new
+* high-value
+* recent buyer
+* birthday
+* lapsed
+* cancelled
+* abandoned lead
+
+Then chooses the appropriate campaign.
+
+### SUCCESS =
+
+Business owner can:
+
+1. select campaign
+2. see audience
+3. preview messages
+4. see estimated impact
+5. approve
+6. send
+7. track results
+8. attribute revenue
+
+**Perfect = no campaign launches without audience validation, consent checks and an auditable launch record.**
+
+---
+
+# 17. Fill Quiet Hours
+
+### Businesses currently do
+
+They notice:
+
+> "Tuesday afternoon is dead."
+
+Then maybe WhatsApp a few customers.
+
+### NahaLabs
+
+The system detects empty capacity.
+
+Then identifies appropriate customers.
+
+Example:
+
+> "You have 5 empty appointments tomorrow."
+
+↓
+
+AI finds suitable customers
+
+↓
+
+campaign
+
+↓
+
+booking
+
+↓
+
+payment
+
+### SUCCESS =
+
+The system must connect:
+
+**capacity → audience → campaign → booking → revenue**
+
+and measure:
+
+> R0 empty capacity → RX recovered revenue.
+
+---
+
+# 18. Retention / Win-Back Engine
+
+### Businesses currently do
+
+They wait for customers to come back.
+
+### Agencies do
+
+Email/SMS campaigns.
+
+### NahaLabs
+
+Automatically identifies:
+
+* 30-day inactive
+* 45-day inactive
+* 60-day inactive
+* churn-risk
+* declining frequency
+
+Then initiates appropriate conversations.
+
+### SUCCESS =
+
+Every eligible customer enters the correct lifecycle state and the system automatically triggers the correct workflow.
+
+---
+
+# 19. 2ndLife — Revenue Recovery Intelligence
+
+This becomes a **major NahaLabs OS module**, not a separate disconnected product.
+
+### Businesses currently do
+
+They lose:
+
+* unpaid invoices
+* failed payments
+* abandoned quotes
+* lapsed policies
+* cancelled subscriptions
+* inactive customers
+* missed renewals
+
+Then manually chase them.
+
+### Agencies currently do
+
+They run:
+
+* email campaigns
+* SMS
+* call campaigns
+* CRM workflows
+
+### NahaLabs / 2ndLife changes
+
+It asks:
+
+> **"Where is recoverable money already sitting inside this business?"**
+
+Then:
+
+**Identify → Score → Contact → Resolve → Pay → Verify → Attribute**
+
+### SUCCESS =
+
+Every recovery opportunity has:
+
+* value
+* reason
+* score
+* status
+* contact history
+* next action
+* payment status
+* recovered amount
+
+Revenue is only marked **RECOVERED** when payment is verified.
+
+### Absolute rule
+
+**A payment redirect is NOT proof of revenue.**
+
+Webhook/payment confirmation is the source of truth.
+
+**Perfect = zero false-positive recovered revenue in payment tests.**
+
+---
+
+# 20. Recovery Scoring
+
+The 2ndLife engine scores opportunities based on factors such as:
+
+* historical value
+* recency
+* previous payment behaviour
+* contactability
+* relationship history
+* lapse duration
+* engagement
+
+### SUCCESS =
+
+Every score is:
+
+* deterministic
+* explainable
+* reproducible
+* testable
+
+Example:
+
+> Score: 87/100
+>
+> * high historical value
+> * recently active
+> * previous successful payments
+>
+> - inactive for 90 days
+
+**Perfect = identical input produces identical score and explanation.**
+
+---
+
+# 21. Payments
+
+### Businesses currently do
+
+They send:
+
+> "Please pay here."
+
+Then manually check whether money arrived.
+
+### NahaLabs
+
+Payment becomes part of the workflow.
+
+Potential providers include:
+
+* Yoco
+* Ozow
+* PayFast
+* Stripe where applicable
+
+### SUCCESS =
+
+Payment system must:
+
+* create payment request
+* track status
+* receive webhook
+* verify payment
+* handle retries
+* be idempotent
+* prevent duplicate revenue
+* connect payment to customer
+* connect payment to campaign/recovery/booking
+
+**Perfect = payment state is always based on verified provider events, not frontend assumptions.**
+
+---
+
+# 22. Reviews & Reputation
+
+### Businesses currently do
+
+They occasionally ask:
+
+> "Please leave us a review."
+
+### Agencies manage reputation manually.
+
+### NahaLabs
+
+After service:
+
+**Customer → feedback → sentiment → routing**
+
+Happy:
+
+> Google review request
+
+Unhappy:
+
+> private manager escalation
+
+### SUCCESS =
+
+Every eligible completed interaction gets the correct review workflow.
+
+No unhappy customer should accidentally be pushed straight into a public review request.
+
+---
+
+# 23. Daily Business Intelligence Brief
+
+### Businesses currently do
+
+Owner logs into five systems.
+
+### NahaLabs
+
+Owner receives:
+
+> **GOOD MORNING — BUSINESS BRIEF**
+
+Including:
+
+* today's bookings
+* revenue
+* available capacity
+* VIPs
+* birthdays
+* at-risk customers
+* new leads
+* hot leads
+* campaign results
+* recovered revenue
+* outstanding opportunities
+
+### SUCCESS =
+
+The brief is:
+
+* accurate
+* concise
+* actionable
+* automatically generated
+* delivered at configured time
+
+**Perfect = every number in the brief can be traced back to authoritative database records.**
+
+---
+
+# 24. Revenue Command Centre
+
+This is the executive dashboard.
+
+Instead of:
+
+> "How many followers did we gain?"
+
+it asks:
+
+### ACQUISITION
+
+How many leads?
+
+### CONVERSION
+
+How many booked?
+
+### ATTENDANCE
+
+How many arrived?
+
+### RETENTION
+
+How many returned?
+
+### RECOVERY
+
+How much lost revenue was recovered?
+
+### REVENUE
+
+How much money did the system generate/influence?
+
+### SUCCESS =
+
+The owner can see:
+
+**Demand → Lead → Booking → Payment → Repeat → Recovery → Revenue**
+
+with drill-down capability.
+
+---
+
+# 25. Franchise / Multi-Location OS
+
+This is particularly important for your **5–500 branch franchise strategy**.
+
+### Businesses currently do
+
+Each franchise location often operates independently.
+
+Corporate has limited visibility.
+
+### NahaLabs
+
+Corporate sees:
+
+* all branches
+* leads
+* bookings
+* revenue
+* campaigns
+* customer activity
+* recovery
+* social activity
+* performance
+
+while franchisees see only their authorized data.
+
+### SUCCESS =
+
+* strict tenant isolation
+* branch-level permissions
+* corporate-level permissions
+* consolidated reporting
+* branch comparisons
+* centralized campaigns
+* local customization
+
+**Perfect = no cross-branch or cross-tenant data leakage in automated security tests.**
+
+---
+
+# 26. Industry Intelligence Packs
+
+Same core engine, different business logic.
+
+For example:
+
+### Restaurant
+
+* table booking
+* loyalty
+* quiet-night campaigns
+* corporate events
+
+### Dental
+
+* consultations
+* treatment plans
+* reminders
+* patient retention
+* strict clinical guardrails
+
+### Salon
+
+* stylist
+* service duration
+* repeat cycle
+* quiet slots
+
+### Automotive
+
+* vehicle
+* service history
+* maintenance reminders
+
+### Insurance
+
+* policy
+* premium
+* lapse
+* renewal
+* payment recovery
+
+### Funeral
+
+* policy/customer records
+* failed payments
+* renewals
+* sensitive communication
+
+### SUCCESS =
+
+Industry configuration changes the **business logic**, not the underlying platform.
+
+---
+
+# 27. Marketing Skills Intelligence Layer
+
+The open-source marketing skills repository you found fits here.
+
+Instead of inventing every marketing methodology ourselves, the Content/Marketing Agent can use structured skills for:
+
+* SEO
+* copywriting
+* CRO
+* social content
+* prospecting
+* product marketing
+* customer research
+* analytics
+* pricing
+* sales enablement
+* growth
+
+So:
+
+**Demand Radar tells us WHAT to talk about.**
+
+**Marketing Skills tell us HOW to market it.**
+
+**NahaLabs tells the system WHAT BUSINESS we are marketing.**
+
+**Postiz/Zernio tells it WHERE to publish.**
+
+**WhatsApp AI tells it HOW to monetize the attention.**
+
+---
+
+# 28. Analytics & Attribution
+
+The ultimate question isn't:
+
+> "Did the AI post something?"
+
+It is:
+
+> **"Did this activity create business value?"**
+
+Track:
+
+`Demand`
+
+↓
+
+`Content`
+
+↓
+
+`Social engagement`
+
+↓
+
+`Lead`
+
+↓
+
+`WhatsApp`
+
+↓
+
+`Booking`
+
+↓
+
+`Payment`
+
+↓
+
+`Repeat purchase`
+
+↓
+
+`Recovery`
+
+↓
+
+`Revenue`
+
+### SUCCESS =
+
+Every possible event has:
+
+* tenant
+* customer
+* timestamp
+* source
+* campaign
+* channel
+* event type
+* revenue relationship
+
+and can be audited.
+
+---
+
+# 29. AI Safety, POPIA & Governance
+
+This is not optional.
+
+The system must have:
+
+* consent
+* opt-out
+* data minimization
+* tenant isolation
+* RBAC
+* audit logs
+* human escalation
+* approved offers
+* approved claims
+* medical guardrails
+* financial guardrails
+* rate limits
+* business hours
+* message controls
+
+### SUCCESS =
+
+The system must **fail safely**.
+
+If AI is unsure:
+
+> escalate.
+
+Not:
+
+> invent.
+
+---
+
+# 30. The Entire Flywheel
+
+This is the final product.
+
+```text
+                 ┌─────────────────────┐
+                 │    DEMAND RADAR     │
+                 │                     │
+                 │ Google Search       │
+                 │ Social Conversations│
+                 │ Comments / DMs      │
+                 │ Local Signals       │
+                 └──────────┬──────────┘
+                            ↓
+                 ┌─────────────────────┐
+                 │   CONTENT ENGINE    │
+                 │                     │
+                 │ Claude / AI         │
+                 │ Marketing Skills    │
+                 │ Scripts             │
+                 │ Reels               │
+                 │ Carousels           │
+                 │ Posts               │
+                 └──────────┬──────────┘
+                            ↓
+                 ┌─────────────────────┐
+                 │   SOCIAL PUBLISH    │
+                 │     Postiz/Zernio   │
+                 └──────────┬──────────┘
+                            ↓
+                 ┌─────────────────────┐
+                 │   LEAD INTERCEPT    │
+                 │ Website + Social    │
+                 └──────────┬──────────┘
+                            ↓
+                 ┌─────────────────────┐
+                 │ WHATSAPP AI EMPLOYEE│
+                 │                     │
+                 │ Qualify             │
+                 │ Answer              │
+                 │ Book                │
+                 │ Follow-up           │
+                 └──────────┬──────────┘
+                            ↓
+                 ┌─────────────────────┐
+                 │       PAYMENT       │
+                 └──────────┬──────────┘
+                            ↓
+                 ┌─────────────────────┐
+                 │      SERVICE        │
+                 │ / APPOINTMENT       │
+                 └──────────┬──────────┘
+                            ↓
+          ┌─────────────────┴─────────────────┐
+          ↓                                   ↓
+   ┌───────────────┐                  ┌────────────────┐
+   │   LOYALTY     │                  │   RETENTION    │
+   │               │                  │                │
+   │ Rewards       │                  │ Win-back       │
+   │ VIP           │                  │ Reminders      │
+   │ Visits        │                  │ Campaigns      │
+   └───────┬───────┘                  └───────┬────────┘
+           └────────────────┬─────────────────┘
+                            ↓
+                 ┌─────────────────────┐
+                 │       2ndLife       │
+                 │                     │
+                 │ Recover lost money  │
+                 │ Failed payments     │
+                 │ Lapsed customers    │
+                 │ Quotes              │
+                 │ Renewals            │
+                 │ Invoices            │
+                 └──────────┬──────────┘
+                            ↓
+                 ┌─────────────────────┐
+                 │ REVENUE INTELLIGENCE│
+                 │                     │
+                 │ Revenue             │
+                 │ ROI                 │
+                 │ CAC                 │
+                 │ LTV                 │
+                 │ Recovery            │
+                 │ Attribution         │
+                 └─────────────────────┘
+```
+
+# The Master Definition of "DONE"
+
+Give this to the coding agent.
+
+```text
+You are building the NahaLabs Revenue OS.
+
+You are NOT building a collection of disconnected SaaS features.
+
+You are building one integrated revenue operating system for businesses.
+
+The system must connect:
+
+DEMAND
+→ CONTENT
+→ SOCIAL
+→ LEADS
+→ WHATSAPP
+→ QUALIFICATION
+→ BOOKING
+→ PAYMENT
+→ SERVICE
+→ LOYALTY
+→ RETENTION
+→ RECOVERY
+→ REVENUE
+→ INTELLIGENCE
+
+2ndLife is the Revenue Recovery Intelligence layer of the platform.
+
+The system must support multiple industries and multiple locations while maintaining strict tenant and role isolation.
+
+IMPORTANT:
+
+You are NOT finished when:
+- the UI looks good
+- the pages load
+- the database exists
+- the API returns 200
+- a feature works in a happy-path demo
+- mock data appears
+- a button works locally
+
+You are finished ONLY when the feature works end-to-end against its real acceptance criteria.
+
+For EVERY feature:
+
+1. Define its business purpose.
+2. Define its inputs.
+3. Define its outputs.
+4. Define its database records.
+5. Define its external integrations.
+6. Define failure states.
+7. Define permissions.
+8. Define audit requirements.
+9. Write automated tests.
+10. Test the happy path.
+11. Test failure paths.
+12. Test duplicate events.
+13. Test retries.
+14. Test authorization.
+15. Test tenant isolation.
+16. Test real integration behaviour where credentials/integrations are available.
+17. Verify the result independently.
+
+CORE SUCCESS PRINCIPLES:
+
+1. No silent failures.
+2. No duplicate revenue.
+3. No duplicate bookings.
+4. No cross-tenant data leakage.
+5. No hallucinated business information.
+6. No unverified "recovered revenue".
+7. No uncontrolled AI actions.
+8. No campaign without appropriate audience/consent controls.
+9. No lost leads.
+10. No lost customer conversations.
+11. Every important event must be auditable.
+12. Every revenue event must be traceable.
+
+DEMAND RADAR:
+
+It must detect available real-world demand signals including search intent and supported social conversations/comments/DMs.
+
+It must identify:
+- recurring questions
+- pricing questions
+- objections
+- local demand
+- service demand
+- emerging topics
+
+Social questions must be clustered and frequency counted.
+
+When a configurable frequency threshold is reached, the system must create a content opportunity.
+
+CONTENT ENGINE:
+
+Demand opportunities must be capable of automatically producing:
+- short-form video concepts
+- video scripts
+- carousels
+- social posts
+- captions
+- CTAs
+- hashtags
+- platform-specific variants
+
+Content must be grounded in the business knowledge base.
+
+The system must know WHY the content was generated.
+
+Every content item should be traceable to:
+Demand signal → content brief → generated asset → publishing event → engagement → lead/revenue where measurable.
+
+SOCIAL MICRO-REPLIES:
+
+Where platform APIs and policies permit automated replies, the system must:
+- detect eligible comments
+- classify intent
+- retrieve approved information
+- generate a compliant response
+- add an appropriate CTA
+- prevent duplicate replies
+- escalate unsafe/uncertain questions
+- record the response
+
+SOCIAL PUBLISHING:
+
+The publishing pipeline must support the configured publishing infrastructure, including Postiz/Zernio where appropriate.
+
+Lifecycle:
+
+GENERATED
+→ REVIEW/APPROVED
+→ SCHEDULED
+→ PUBLISHED
+→ MEASURED
+
+Every publishing failure must be visible.
+
+Every published post must have an external platform reference where available.
+
+WHATSAPP AI EMPLOYEE:
+
+The AI must be able to:
+- answer
+- qualify
+- book
+- reschedule
+- cancel
+- follow up
+- send approved payment requests
+- handle FAQs
+- escalate to humans
+- maintain context
+
+It must never invent business facts.
+
+BOOKING:
+
+The booking engine must:
+- respect availability
+- respect service duration
+- prevent double booking
+- assign appropriate staff/location
+- confirm bookings
+- modify bookings
+- cancel bookings
+- trigger reminders
+
+LOYALTY:
+
+Points must be:
+- deterministic
+- auditable
+- idempotent
+- fraud-resistant
+- linked to the correct customer
+
+RETENTION:
+
+The system must automatically identify eligible:
+- active
+- at-risk
+- dormant
+- churned
+
+customers and trigger the correct workflows.
+
+2NDLIFE:
+
+2ndLife must identify:
+- lapsed customers
+- failed payments
+- abandoned quotes
+- unpaid invoices
+- missed renewals
+- cancelled subscriptions
+- other configured recovery opportunities
+
+Every opportunity must receive an explainable recovery score.
+
+Recovery must follow:
+
+IDENTIFY
+→ SCORE
+→ CONTACT
+→ ENGAGE
+→ PAYMENT
+→ VERIFY
+→ RECOVERED
+
+CRITICAL:
+
+Never mark money as recovered merely because:
+- a payment page opened
+- a user clicked Pay
+- a redirect occurred
+- the frontend says success
+
+Revenue becomes RECOVERED only after authoritative payment verification.
+
+PAYMENTS:
+
+All payment webhooks must be idempotent.
+
+Duplicate webhook events must never create duplicate payments or revenue.
+
+CUSTOMER 360:
+
+Every customer must have a coherent timeline containing supported:
+- leads
+- conversations
+- bookings
+- payments
+- loyalty events
+- campaigns
+- reviews
+- recovery events
+
+ANALYTICS:
+
+The platform must be capable of tracing:
+
+Demand
+→ Content
+→ Engagement
+→ Lead
+→ Conversation
+→ Booking
+→ Payment
+→ Repeat
+→ Recovery
+→ Revenue
+
+The dashboard must prioritize business outcomes over vanity metrics.
+
+FRANCHISE/MULTI-LOCATION:
+
+Corporate users must be able to see authorized network-level performance.
+
+Branch users must only see authorized branch information.
+
+Industry configurations must change business logic without creating completely separate platforms.
+
+SECURITY:
+
+Run automated tests for:
+- authentication
+- authorization
+- RBAC
+- tenant isolation
+- branch isolation
+- API authorization
+- webhook verification
+- malicious input
+- duplicate events
+- race conditions
+
+AI GOVERNANCE:
+
+AI actions must be bounded by:
+- business knowledge
+- approved offers
+- approved claims
+- industry guardrails
+- human escalation rules
+- rate limits
+- business hours
+- consent/opt-out rules
+
+If the AI does not know, it must escalate rather than invent.
+
+DEFINITION OF DONE:
+
+A feature is DONE only when:
+
+[ ] UI implemented
+[ ] backend implemented
+[ ] database implemented
+[ ] validation implemented
+[ ] authorization implemented
+[ ] audit logging implemented
+[ ] error handling implemented
+[ ] retry/idempotency implemented where relevant
+[ ] empty states implemented
+[ ] loading states implemented
+[ ] failure states implemented
+[ ] automated unit tests implemented
+[ ] integration tests implemented
+[ ] E2E tests implemented
+[ ] security tests implemented
+[ ] real integration tested where available
+[ ] production build passes
+[ ] production deployment verified
+[ ] browser flow verified
+[ ] no critical console errors
+[ ] no critical API errors
+[ ] no tenant leakage
+[ ] no duplicate records
+[ ] no unverified revenue
+[ ] acceptance criteria passed
+
+DO NOT DECLARE THE PROJECT COMPLETE because the interface looks finished.
+
+Do not hide broken functionality behind mock data.
+
+Do not replace a required real integration with a fake success response.
+
+Do not silently swallow errors.
+
+If an integration cannot yet be tested because credentials or external approval are unavailable, explicitly mark that integration BLOCKED and implement the correct integration boundary and test harness rather than pretending it works.
+
+After every major implementation phase, produce:
+
+1. What was built.
+2. What was tested.
+3. What passed.
+4. What failed.
+5. What remains.
+6. Evidence supporting the result.
+
+Continue working until all unblocked acceptance criteria are satisfied.
+
+The final standard is:
+
+A real business can connect its data, connect its channels, receive real demand signals, generate useful content, publish it, receive leads, communicate through WhatsApp, qualify customers, book appointments, collect payments, retain customers, recover lost revenue through 2ndLife, and see the resulting commercial performance from one system.
+
+That is the definition of DONE.
+```
+
+## The strategic difference
+
+The biggest thing I would **not** allow the coding agent to lose sight of is this:
+
+**We are not building an AI marketing tool.**
+
+**We are not building a CRM.**
+
+**We are not building a WhatsApp chatbot.**
+
+**We are not building a social media scheduler.**
+
+**We are not building a loyalty app.**
+
+**We are not building a payment system.**
+
+Those are components.
+
+### The actual product is:
+
+> **NahaLabs Revenue OS — an intelligent operating layer that finds demand, creates and distributes the right message, captures the customer, converts them, gets them to pay, brings them back, and recovers revenue that would otherwise be lost.**
+
+And **2ndLife** is the particularly powerful piece on the back end:
+
+> **Acquisition gets new money. Retention protects existing money. 2ndLife goes looking for money the business has already lost.**
+
+That gives the whole system a much stronger commercial story than simply saying *"we have AI agents."*

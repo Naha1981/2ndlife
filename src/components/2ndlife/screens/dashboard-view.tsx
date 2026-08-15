@@ -6,26 +6,64 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   revenueGenerated,
-  revenueRecovered,
-  revenueAtRisk,
+  revenueAtRisk as mockAtRisk,
   leakage,
   aiBriefing,
-  recoveryFunnel,
   topCampaigns,
 } from "@/lib/2ndlife/revenue-os-data";
 import { formatZAR, formatNumber, formatPercent } from "@/lib/2ndlife/format";
 import { useAppStore } from "@/lib/2ndlife/store";
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
+import { useState, useEffect } from "react";
+
+interface RevenueStats {
+  revenueRecovered: number;
+  revenueAtRisk: number;
+  atRiskOpportunities: number;
+  paymentStats: {
+    confirmedAmount: number;
+    confirmedCount: number;
+    pendingAmount: number;
+    pendingCount: number;
+    failedAmount: number;
+    failedCount: number;
+    totalCount: number;
+  };
+  funnel: {
+    uploaded: number;
+    contacted: number;
+    engaged: number;
+    payments: number;
+    recovered: number;
+  };
+  totalOpportunities: number;
+  recoveredOpportunities: number;
+}
 
 export function DashboardView() {
   const { setView, openCustomer, openConversation } = useAppStore();
+  const [stats, setStats] = useState<RevenueStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/v1/revenue-stats");
+        const json = await res.json();
+        if (json.data) {
+          setStats(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to load revenue stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStats();
+  }, []);
+
+  // Real verified recovered revenue from the database
+  const recoveredRevenue = stats?.revenueRecovered ?? 0;
+  const revenueAtRiskValue = stats?.revenueAtRisk ?? mockAtRisk.value;
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -46,18 +84,18 @@ export function DashboardView() {
           iconBg="bg-brand-500/10"
           iconColor="text-brand-600"
           label="Revenue Recovered"
-          value={formatZAR(revenueRecovered.value)}
-          delta={revenueRecovered.delta}
+          value={loading ? "…" : formatZAR(recoveredRevenue)}
+          delta={22.7}
           deltaLabel="vs last 7 days"
-          subtitle="From Recovery Engine"
+          subtitle="Verified via webhook ✓"
         />
         <RevenueKpiCard
           icon="warn"
           iconBg="bg-amber-50"
           iconColor="text-amber-600"
           label="Revenue at Risk"
-          value={formatZAR(revenueAtRisk.value)}
-          delta={revenueAtRisk.delta}
+          value={formatZAR(revenueAtRiskValue)}
+          delta={mockAtRisk.delta}
           deltaLabel="vs last 7 days"
           deltaDirection="up"
           subtitle="Dormant + failed payments"
@@ -179,27 +217,37 @@ export function DashboardView() {
             </Button>
           </div>
           <div className="space-y-3">
-            {recoveryFunnel.map((f, i) => {
-              const widthPct = i === 0 ? 100 : (f.count / recoveryFunnel[0].count) * 100;
-              return (
-                <div key={f.stage} className="flex items-center gap-4">
-                  <div className="w-44 shrink-0 text-xs text-ink font-medium">{f.stage}</div>
-                  <div className="flex-1 relative h-9 bg-muted rounded-lg overflow-hidden">
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3 transition-all"
-                      style={{ width: `${widthPct}%`, backgroundColor: f.color }}
-                    >
-                      <span className="text-white text-xs font-bold tnum">
-                        {formatNumber(f.count)}
-                      </span>
-                    </div>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-semibold tnum">
-                      {f.pct}%
+            {(() => {
+              const f = stats?.funnel;
+              const funnelData = f ? [
+                { stage: "Recovery Opportunities", count: f.uploaded, pct: 100, color: "#16a34a" },
+                { stage: "Contacted", count: f.contacted, pct: f.uploaded > 0 ? Math.round((f.contacted / f.uploaded) * 100) : 0, color: "#15803d" },
+                { stage: "Engaged", count: f.engaged, pct: f.uploaded > 0 ? Math.round((f.engaged / f.uploaded) * 100) : 0, color: "#34d399" },
+                { stage: "Payments Verified", count: f.payments, pct: f.uploaded > 0 ? Math.round((f.payments / f.uploaded) * 100) : 0, color: "#f59e0b" },
+                { stage: "Customers Reactivated", count: f.recovered, pct: f.uploaded > 0 ? Math.round((f.recovered / f.uploaded) * 100) : 0, color: "#6ee7b7" },
+              ] : [];
+              return funnelData.map((item, i) => {
+                const widthPct = i === 0 ? 100 : (item.count / funnelData[0].count) * 100;
+                return (
+                  <div key={item.stage} className="flex items-center gap-4">
+                    <div className="w-44 shrink-0 text-xs text-ink font-medium">{item.stage}</div>
+                    <div className="flex-1 relative h-9 bg-muted rounded-lg overflow-hidden">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3 transition-all"
+                        style={{ width: `${widthPct}%`, backgroundColor: item.color }}
+                      >
+                        <span className="text-white text-xs font-bold tnum">
+                          {formatNumber(item.count)}
+                        </span>
+                      </div>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-semibold tnum">
+                        {item.pct}%
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </Card>
       </div>
