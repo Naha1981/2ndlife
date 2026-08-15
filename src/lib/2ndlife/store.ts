@@ -5,6 +5,7 @@ import { create } from "zustand";
 export type AppView =
   | "landing"
   | "dashboard"
+  | "demand-radar"
   | "campaigns"
   | "campaigns-new"
   | "conversations"

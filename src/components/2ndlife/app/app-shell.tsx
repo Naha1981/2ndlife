@@ -17,6 +17,7 @@ import { formatZAR } from "@/lib/2ndlife/format";
 const viewToNav: Record<AppView, string> = {
   landing: "dashboard",
   dashboard: "dashboard",
+  "demand-radar": "demand-radar",
   campaigns: "campaigns",
   "campaigns-new": "campaigns",
   conversations: "conversations",

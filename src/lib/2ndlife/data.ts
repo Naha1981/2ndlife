@@ -493,6 +493,7 @@ export const conversations: Conversation[] = [
 
 export const navItems = [
   { id: "dashboard", label: "Dashboard", icon: "home", badge: null },
+  { id: "demand-radar", label: "Demand & Content", icon: "chart", badge: null },
   { id: "campaigns", label: "Campaigns", icon: "send", badge: null },
   { id: "conversations", label: "Conversations", icon: "chat", badge: "128" },
   { id: "payments", label: "Payments", icon: "card", badge: "42" },

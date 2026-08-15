@@ -1,0 +1,2773 @@
+Yes. Now that all the pieces are on the table, I would **stop treating Lead Machine, SkySmile, HostAI, Flavourly and 2ndLife as separate products**.
+
+They are different **faces/configurations of one underlying platform**.
+
+The cleanest strategic architecture is:
+
+# 2ndLife — NahaLabs Revenue OS
+
+### The AI Revenue Operating System for service businesses
+
+> **Find demand. Create attention. Capture enquiries. Qualify leads. Book customers. Prevent no-shows. Recover lost revenue. Reactivate old customers. Publish content automatically. Learn what customers are asking. Feed real revenue back into advertising.**
+
+The important correction from the earlier PRD is that **Content/Demand/Social Intelligence is not a side module**. It becomes one of the major engines of 2ndLife.
+
+The platform therefore becomes a **closed-loop revenue system**, not merely a WhatsApp automation product.
+
+I have incorporated the NahaLabs engineering standard from your uploaded architecture document: Next.js App Router + TypeScript, Tailwind/shadcn, Neon PostgreSQL + Drizzle, Clerk, Vercel AI SDK, Evolution API, Vercel, Render workers, GitHub and Playwright. 
+
+---
+
+# 2ndLife Revenue OS
+
+## Production-Ready Product Requirements Document & Execution Plan
+
+**Document:** Master PRD
+**Version:** 2.0
+**Company:** NahaLabs
+**Product:** 2ndLife Revenue OS
+**Market:** South Africa first, global expansion later
+**Primary channel:** WhatsApp
+**Architecture:** AI-native modular monolith
+**Deployment:** Vercel + Render
+**Database:** Neon PostgreSQL
+**Status:** Master product specification
+
+---
+
+# 1. Executive Summary
+
+2ndLife is an **AI Revenue Operating System** that helps service businesses acquire, convert, retain and recover revenue using intelligent automation.
+
+Traditional software gives businesses isolated tools:
+
+* CRM
+* website
+* chatbot
+* social media scheduler
+* loyalty system
+* booking system
+* email marketing
+* advertising analytics
+* payment system
+
+2ndLife connects these functions into **one revenue loop**.
+
+The system continuously observes:
+
+* Google search demand
+* advertising search terms
+* social conversations
+* customer comments
+* customer questions
+* website enquiries
+* WhatsApp conversations
+* missed calls
+* bookings
+* cancellations
+* no-shows
+* dormant customers
+* failed payments
+* unpaid invoices
+* abandoned quotes
+* reviews
+* actual payments
+
+It then uses those signals to decide:
+
+> **What should happen next to create, capture or recover revenue?**
+
+This produces the fundamental 2ndLife loop:
+
+```text
+DEMAND
+   ↓
+INTELLIGENCE
+   ↓
+CONTENT
+   ↓
+DISTRIBUTION
+   ↓
+ENGAGEMENT
+   ↓
+WHATSAPP AI EMPLOYEE
+   ↓
+QUALIFICATION
+   ↓
+BOOKING
+   ↓
+PAYMENT
+   ↓
+CUSTOMER
+   ↓
+RETENTION
+   ↓
+RECOVERY
+   ↓
+REVENUE DATA
+   ↓
+DEMAND INTELLIGENCE
+   ↺
+```
+
+The system therefore becomes increasingly intelligent as the business generates more interactions.
+
+---
+
+# 2. The Strategic Positioning
+
+Do **not** sell 2ndLife as:
+
+> "an AI chatbot."
+
+Do not sell it as:
+
+> "a social media automation tool."
+
+Do not sell it as:
+
+> "a CRM."
+
+Do not sell it as:
+
+> "marketing automation."
+
+Do not sell it as:
+
+> "a booking system."
+
+The category should be:
+
+## **AI Revenue Operating System**
+
+The promise:
+
+> **2ndLife turns your digital presence into an always-on revenue department.**
+
+Or, more aggressively:
+
+> **Your business gets an AI marketing department, receptionist, salesperson, retention manager and revenue recovery department — connected by one system.**
+
+This builds directly on the "Invisible Employee" concept: the AI employee is not merely a chatbot but a complete sales, marketing and support department operating across WhatsApp, social, websites and landing pages. 
+
+---
+
+# 3. The Core Business Problem
+
+Businesses don't primarily have a "marketing problem."
+
+They have a **revenue leakage problem**.
+
+Revenue can leak at every stage:
+
+| Stage         | Revenue Leak                                 |
+| ------------- | -------------------------------------------- |
+| Demand        | Business doesn't know what customers want    |
+| Awareness     | Business isn't publishing relevant content   |
+| Engagement    | Social questions go unanswered               |
+| Lead capture  | Website visitors disappear                   |
+| Response      | Leads wait hours for replies                 |
+| Qualification | Staff waste time on poor leads               |
+| Booking       | Prospects don't commit                       |
+| Attendance    | Customers don't show                         |
+| Payment       | Customers don't complete payment             |
+| Retention     | Customers don't return                       |
+| Recovery      | Dormant customers aren't contacted           |
+| Attribution   | Business doesn't know what generated revenue |
+
+2ndLife exists to close those leaks.
+
+---
+
+# 4. The 2ndLife Revenue Flywheel
+
+This is the most important part of the product.
+
+## Layer 1 — Demand Radar
+
+The system detects what the market wants.
+
+Sources include:
+
+### Search intent
+
+* Google Ads search terms
+* Google Trends
+* search-volume movements
+* local keyword patterns
+* service + suburb searches
+
+Example:
+
+> "teeth whitening Sandton price"
+
+---
+
+### Environmental signals
+
+Where relevant:
+
+* weather
+* public holidays
+* seasonal events
+* load shedding
+* local events
+* municipal disruptions
+* school calendars
+* sporting events
+
+---
+
+### Social conversation intelligence
+
+This is the feature you correctly insisted must be included.
+
+2ndLife monitors **authorized social data** from connected business accounts and supported platform APIs.
+
+Sources may include:
+
+* Instagram comments
+* Facebook comments
+* Facebook messages
+* TikTok comments where API access permits
+* X conversations/mentions where API access permits
+* LinkedIn engagement where supported
+* YouTube comments
+* Google Business Profile reviews/questions where supported
+
+It identifies:
+
+* questions
+* objections
+* price requests
+* complaints
+* product requests
+* service requests
+* location questions
+* availability questions
+* pain points
+* competitor comparisons
+* recurring themes
+* emerging local events
+
+Example:
+
+```text
+Question detected:
+
+"How many laser sessions do I need?"
+
+Platform:
+TikTok
+
+Occurrences:
+7
+
+Time window:
+48 hours
+
+Category:
+Treatment / Education
+
+Intent:
+HIGH
+
+Commercial potential:
+HIGH
+```
+
+---
+
+# 5. Social Conversation Mining
+
+This is a **first-class module**, not an add-on.
+
+## Social Question Bank
+
+Every meaningful question becomes structured intelligence.
+
+Core entity:
+
+```text
+social_questions
+```
+
+Fields:
+
+* tenant_id
+* platform
+* post_id
+* comment_id
+* author_id/username where legally and technically appropriate
+* original_text
+* normalized_question
+* intent
+* category
+* sentiment
+* commercial_intent
+* location
+* frequency
+* first_seen_at
+* last_seen_at
+* response_status
+* content_opportunity
+* lead_opportunity
+* source_url
+* privacy/retention metadata
+
+---
+
+# 6. Question Clustering
+
+The system must understand that these are the same question:
+
+> "How much is laser?"
+
+> "Laser hair removal price?"
+
+> "What do you guys charge for laser?"
+
+> "Cost of underarm laser?"
+
+They become:
+
+### Canonical question
+
+> **What does laser hair removal cost?**
+
+Frequency:
+
+```text
+14 mentions
+5 days
+3 platforms
+```
+
+That becomes a **content opportunity**.
+
+---
+
+# 7. The Dual-Action Social Engine
+
+This is one of the strongest parts of the entire product.
+
+Every detected high-intent social question can trigger two different actions.
+
+## Action A — Micro Reply
+
+One person → one response.
+
+Example:
+
+```text
+Customer:
+"How much does teeth whitening cost?"
+
+2ndLife:
+
+"Great question! Pricing depends on the treatment
+you need. You can get a quick estimate and available
+appointments here → WhatsApp."
+```
+
+The system can:
+
+* answer
+* provide approved information
+* link to WhatsApp
+* capture lead
+* initiate qualification
+* escalate to human
+
+---
+
+# 8. Action B — Macro Content
+
+One question → content for thousands.
+
+When a question crosses a configurable threshold:
+
+```text
+frequency >= 3
+AND
+commercial_intent >= threshold
+```
+
+2ndLife creates a content campaign.
+
+For example:
+
+### Source question
+
+> "Is laser hair removal cheaper than waxing?"
+
+Generated assets:
+
+**TikTok/Reel/Short**
+
+* hook
+* script
+* CTA
+* caption
+
+**Instagram**
+
+* carousel
+* caption
+* hashtags
+
+**Facebook**
+
+* educational post
+
+**LinkedIn**
+
+* professional/educational angle
+
+**X**
+
+* concise thread/post
+
+**YouTube**
+
+* Shorts title
+* description
+
+**Google Business Profile**
+
+* relevant business update where appropriate
+
+Everything points toward the revenue action.
+
+---
+
+# 9. The Autonomous Content Engine
+
+This is where the system meets the capability you saw in Turbine.
+
+2ndLife automatically builds a **Business Brain** from:
+
+* website
+* service catalogue
+* FAQs
+* pricing
+* locations
+* products
+* reviews
+* brand voice
+* offers
+* target customer
+* competitors
+* historical content
+* social questions
+* search demand
+* revenue data
+
+The AI then has enough context to create content without asking:
+
+> "What should we post this week?"
+
+---
+
+# 10. Content Production Pipeline
+
+```text
+SIGNAL
+ ↓
+QUESTION / SEARCH / TREND
+ ↓
+CLASSIFICATION
+ ↓
+COMMERCIAL INTENT
+ ↓
+CONTENT OPPORTUNITY
+ ↓
+AI CONTENT BRIEF
+ ↓
+MULTI-FORMAT GENERATION
+ ↓
+QUALITY / BRAND / COMPLIANCE CHECK
+ ↓
+APPROVAL POLICY
+ ↓
+POSTIZ
+ ↓
+SOCIAL CHANNELS
+```
+
+Content types:
+
+* text posts
+* carousels
+* reels
+* Shorts
+* TikTok scripts
+* captions
+* stories
+* educational posts
+* FAQs
+* offers
+* testimonials
+* case studies
+* local content
+* seasonal content
+* objection handling
+* comparison content
+* promotional content
+
+---
+
+# 11. Autonomous Publishing
+
+Postiz becomes the **distribution layer**, not the intelligence layer.
+
+2ndLife owns:
+
+* strategy
+* content intelligence
+* content generation
+* approval policy
+* scheduling logic
+* attribution
+
+Postiz handles:
+
+* social account connections
+* publishing
+* scheduling
+* platform-specific delivery
+
+Potential channels:
+
+* Instagram
+* Facebook
+* LinkedIn
+* TikTok
+* YouTube
+* YouTube Shorts
+* X
+* Threads
+* Google Business Profile
+* other supported Postiz channels
+
+The system should **not assume every platform supports every automation capability**. Each integration must expose its actual supported capabilities.
+
+---
+
+# 12. Human Approval Policy
+
+The platform supports three modes.
+
+### Mode 1 — Manual
+
+Every post requires approval.
+
+Best for:
+
+* medical
+* dental
+* legal
+* financial services
+* regulated businesses
+
+### Mode 2 — Semi-Autonomous
+
+AI generates and schedules within predefined rules.
+
+Human approval required for:
+
+* pricing changes
+* medical claims
+* legal claims
+* promotions
+* sensitive subjects
+
+### Mode 3 — Autonomous
+
+AI can publish automatically when:
+
+* content uses approved knowledge
+* no restricted claims are detected
+* confidence exceeds threshold
+* content type is approved
+* brand guardrails pass
+
+This is important because **autonomy should be configurable per tenant and per content class.**
+
+---
+
+# 13. AI Revenue Employee
+
+This is the central execution layer.
+
+It lives across:
+
+* WhatsApp
+* website
+* landing pages
+* social conversations
+* potentially voice later
+
+Its job is:
+
+> **Turn attention into revenue.**
+
+It can:
+
+* answer FAQs
+* qualify leads
+* identify intent
+* recommend services
+* check availability
+* book appointments
+* send payment links
+* collect deposits
+* follow up
+* recover ghost leads
+* escalate to humans
+* remember customer preferences
+* request reviews
+* initiate retention campaigns
+
+---
+
+# 14. Lead Machine Becomes the Acquisition Layer
+
+The Lead Machine concept is not discarded.
+
+It becomes:
+
+## 2ndLife Lead Capture
+
+Capabilities:
+
+* AI website generator
+* landing-page generator
+* lead forms
+* conversational lead capture
+* AI qualification
+* 1–10 lead score
+* Hot/Warm/Cold
+* suggested next action
+* WhatsApp alert
+* CRM pipeline
+* attribution
+
+The website itself becomes another acquisition surface.
+
+---
+
+# 15. WhatsApp-First Architecture
+
+WhatsApp is the primary transactional channel.
+
+The system should support:
+
+```text
+Social
+  ↓
+Website
+  ↓
+Google
+  ↓
+Ads
+  ↓
+QR
+  ↓
+Direct WhatsApp
+       ↓
+AI Revenue Employee
+       ↓
+Qualification
+       ↓
+Booking
+       ↓
+Payment
+```
+
+Evolution API provides the WhatsApp integration layer in the NahaLabs architecture. 
+
+---
+
+# 16. Booking & Attendance Engine
+
+The platform handles:
+
+### Booking
+
+* service
+* practitioner
+* location
+* date
+* time
+* duration
+* availability
+
+### Confirmation
+
+```text
+Booking created
+ ↓
+confirmation
+ ↓
+48h reminder
+ ↓
+24h reminder
+ ↓
+6h reminder
+ ↓
+attendance confirmation
+```
+
+### No-show prevention
+
+If the customer doesn't confirm:
+
+```text
+AI reminder
+ ↓
+still no response
+ ↓
+staff alert
+```
+
+---
+
+# 17. Empty Slot Engine
+
+This concept from Flavourly becomes universal.
+
+> **An empty appointment slot earns R0.**
+
+2ndLife identifies:
+
+* cancellations
+* unused capacity
+* quiet hours
+* low-demand periods
+
+Then finds the best customers to target.
+
+Example:
+
+```text
+Tuesday
+
+14:00–16:00
+
+3 empty appointments
+
+Potential revenue:
+R4,500
+```
+
+System:
+
+> "Would you like me to fill these slots?"
+
+Or, under autonomous policy:
+
+> Automatically launches the approved campaign.
+
+---
+
+# 18. Loyalty Engine
+
+Flavourly's loyalty system becomes another shared module.
+
+Customers can:
+
+```text
+JOIN
+BALANCE
+REDEEM
+STOP
+```
+
+No dedicated mobile app.
+
+The system tracks:
+
+* visits
+* purchases
+* points
+* rewards
+* VIP status
+* preferences
+* birthdays
+* anniversaries
+* service frequency
+
+---
+
+# 19. Retention Engine
+
+2ndLife automatically detects customer lifecycle state.
+
+```text
+NEW
+ ↓
+ACTIVE
+ ↓
+VIP
+ ↓
+AT-RISK
+ ↓
+DORMANT
+ ↓
+CHURNED
+```
+
+Automations can include:
+
+### 30-day
+
+Gentle reminder.
+
+### 45-day
+
+Personalized offer.
+
+### 60-day
+
+Win-back campaign.
+
+The exact timing is configurable by vertical.
+
+---
+
+# 20. 2ndLife Revenue Recovery
+
+This is where the name becomes especially powerful.
+
+2ndLife identifies revenue that already had commercial intent.
+
+Sources:
+
+* lapsed customers
+* failed payments
+* abandoned bookings
+* abandoned carts
+* unpaid invoices
+* stale quotes
+* cancelled subscriptions
+* missed renewals
+* dormant customers
+* no-show customers
+* unfinished treatment plans
+* abandoned consultations
+
+The question:
+
+> **Who already wanted to buy, pay, renew or continue — and what stopped them?**
+
+---
+
+# 21. Recovery Intelligence
+
+Every opportunity receives a deterministic score.
+
+Example:
+
+```text
+Recovery Score: 87/100
+
+Historical value: +20
+Recent activity: +18
+Previous payment history: +15
+Contactability: +15
+Recency: +12
+Offer eligibility: +10
+Risk: -3
+```
+
+The system explains **why**.
+
+AI should not decide the score arbitrarily.
+
+Business scoring logic lives in application services; AI can interpret and communicate the result.
+
+That follows the NahaLabs AI rule that business rules belong in services rather than prompts. 
+
+---
+
+# 22. Recovery Agent
+
+The Recovery Agent operates through WhatsApp.
+
+It can:
+
+* explain outstanding balances
+* answer objections
+* offer approved incentives
+* present payment options
+* handle renewal
+* reactivate customers
+* escalate complex cases
+* honour STOP immediately
+
+---
+
+# 23. Verified Revenue
+
+This is critical.
+
+2ndLife must distinguish:
+
+### Potential revenue
+
+> R150,000 opportunity
+
+from:
+
+### Recovered revenue
+
+> R47,500 confirmed payment
+
+Payment confirmation must come from a verified webhook.
+
+The browser redirect is never the source of truth. That principle is already established in your engineering standard. 
+
+---
+
+# 24. Payment Abstraction
+
+Initial South African providers:
+
+* Yoco
+* PayFast
+
+Architecture:
+
+```text
+PaymentService
+    ↓
+PaymentProvider interface
+    ↓
+YocoAdapter
+PayFastAdapter
+Future providers
+```
+
+This makes the provider replaceable.
+
+---
+
+# 25. Closed-Loop Advertising
+
+When a customer actually pays:
+
+```text
+Lead
+ ↓
+WhatsApp
+ ↓
+Booking
+ ↓
+Deposit
+ ↓
+Payment webhook
+ ↓
+Revenue event
+ ↓
+Meta CAPI
+ ↓
+Google Offline Conversion
+```
+
+The advertising platforms therefore receive **actual business outcomes**, not merely clicks.
+
+This was already identified as one of the core Revenue OS capabilities. 
+
+---
+
+# 26. Revenue Intelligence
+
+The dashboard should answer:
+
+### Where did my customers come from?
+
+### What did they search?
+
+### What did they ask?
+
+### What content generated engagement?
+
+### Which content generated leads?
+
+### Which leads booked?
+
+### Which bookings paid?
+
+### Which campaigns generated revenue?
+
+### How much revenue was recovered?
+
+### How much revenue is currently leaking?
+
+---
+
+# 27. The Money Left on the Table Dashboard
+
+This becomes the signature dashboard.
+
+Example:
+
+```text
+MONEY LEFT ON THE TABLE
+
+Slow response          R18,400
+Unanswered leads       R11,200
+No-shows                R7,800
+Dormant customers      R24,500
+Failed payments         R9,300
+Abandoned quotes       R15,700
+--------------------------------
+Estimated leakage      R86,900
+```
+
+Then:
+
+```text
+RECOVERED THIS MONTH
+
+R42,750
+```
+
+And:
+
+```text
+RECOVERY RATE
+
+49.2%
+```
+
+The business owner doesn't need to understand CTR, CPC or embeddings.
+
+They need to understand:
+
+> **"How much money did the system make me?"**
+
+---
+
+# 28. The Autonomous Demand-to-Revenue Loop
+
+This is the final integrated system.
+
+```text
+                    ┌───────────────────────┐
+                    │     DEMAND RADAR      │
+                    │                       │
+                    │ Google Search         │
+                    │ Ads Search Terms      │
+                    │ Trends                 │
+                    │ Weather                │
+                    │ Local Events           │
+                    │ Social Conversations  │
+                    │ Reviews                │
+                    └───────────┬───────────┘
+                                ↓
+                    ┌───────────────────────┐
+                    │ SOCIAL INTELLIGENCE   │
+                    │                       │
+                    │ Questions             │
+                    │ Objections            │
+                    │ Pricing               │
+                    │ Complaints            │
+                    │ Trends                │
+                    └───────────┬───────────┘
+                                ↓
+                    ┌───────────────────────┐
+                    │   CONTENT ENGINE      │
+                    │                       │
+                    │ Posts                 │
+                    │ Reels                 │
+                    │ Carousels             │
+                    │ Shorts                │
+                    │ Scripts               │
+                    └───────────┬───────────┘
+                                ↓
+                    ┌───────────────────────┐
+                    │       POSTIZ          │
+                    │   DISTRIBUTION LAYER  │
+                    └───────────┬───────────┘
+                                ↓
+             ┌────────────────────────────────────┐
+             │ Social / Search / Website / Ads   │
+             └────────────────┬───────────────────┘
+                              ↓
+                    ┌───────────────────────┐
+                    │   AI REVENUE EMPLOYEE │
+                    │                       │
+                    │ WhatsApp              │
+                    │ Web Chat              │
+                    │ Social Replies        │
+                    └───────────┬───────────┘
+                                ↓
+                    ┌───────────────────────┐
+                    │ QUALIFY → BOOK → PAY  │
+                    └───────────┬───────────┘
+                                ↓
+                    ┌───────────────────────┐
+                    │ RETENTION + LOYALTY   │
+                    └───────────┬───────────┘
+                                ↓
+                    ┌───────────────────────┐
+                    │   2NDLIFE RECOVERY    │
+                    │                       │
+                    │ Lapsed                │
+                    │ Failed payments      │
+                    │ Quotes               │
+                    │ Invoices             │
+                    │ No-shows             │
+                    └───────────┬───────────┘
+                                ↓
+                    ┌───────────────────────┐
+                    │   VERIFIED REVENUE    │
+                    └───────────┬───────────┘
+                                ↓
+                         META / GOOGLE
+                                ↓
+                         DEMAND RADAR
+                                ↺
+```
+
+**That is the product.**
+
+---
+
+# 29. Vertical Products
+
+We should **not build separate codebases**.
+
+We build one platform and create vertical configurations.
+
+## 2ndLife Clinic
+
+Formerly:
+
+**SkySmile AI**
+
+Features:
+
+* AI front desk
+* appointment booking
+* consultation qualification
+* no-show prevention
+* treatment follow-up
+* course coordination
+* patient reactivation
+* membership management
+* reviews
+* retail/product reminders
+* birthdays
+* clinic-specific knowledge
+* clinical guardrails
+* HPCSA-aware escalation policies
+
+The SkySmile concept fits perfectly as the **Clinic Revenue Pack**.
+
+---
+
+# 30. 2ndLife Restaurant
+
+Formerly:
+
+**HostAI / Gemino / Orderly**
+
+Capabilities:
+
+* AI hostess
+* reservations
+* menu questions
+* private dining leads
+* corporate events
+* customer database
+* loyalty
+* quiet-hour campaigns
+* VIP recognition
+* birthday campaigns
+* reviews
+* repeat dining
+* customer preferences
+
+---
+
+# 31. 2ndLife Service Business
+
+Formerly:
+
+**Lead Machine / Flavourly**
+
+For:
+
+* salons
+* barbers
+* gyms
+* mechanics
+* car washes
+* tutors
+* consultants
+* lawyers
+* trades
+* solar
+* home services
+* pet services
+* wellness businesses
+
+Shared capabilities:
+
+* lead capture
+* website
+* AI concierge
+* WhatsApp
+* booking
+* loyalty
+* campaigns
+* retention
+* recovery
+* content
+* demand intelligence
+
+---
+
+# 32. 2ndLife Financial Recovery
+
+For:
+
+* insurance
+* funeral plans
+* subscriptions
+* SaaS
+* finance
+* education
+* healthcare
+* B2B services
+
+Capabilities:
+
+* failed payment recovery
+* lapsed policy recovery
+* renewal recovery
+* invoice recovery
+* stale quote recovery
+* churn recovery
+
+This is the original **2ndLife Recovery Engine**.
+
+---
+
+# 33. Business Brain
+
+Every tenant gets a structured Business Brain.
+
+```text
+Business
+ ├── Identity
+ ├── Locations
+ ├── Services
+ ├── Products
+ ├── Pricing
+ ├── Offers
+ ├── FAQs
+ ├── Policies
+ ├── Brand voice
+ ├── Target customers
+ ├── Competitors
+ ├── Knowledge documents
+ ├── Content history
+ ├── Customer data
+ ├── Revenue data
+ └── Compliance rules
+```
+
+This powers:
+
+* AI employee
+* content engine
+* social replies
+* lead qualification
+* recovery
+* recommendations
+
+---
+
+# 34. AI Architecture
+
+Use **Vercel AI SDK only**.
+
+No direct provider SDKs in business code.
+
+Models can be routed depending on task:
+
+```text
+Fast classification
+→ cheaper model
+
+Content generation
+→ Claude/Gemini/etc.
+
+Complex reasoning
+→ frontier model
+
+Embeddings
+→ configured provider
+
+Local/private deployments
+→ future Ollama option
+```
+
+The application remains provider-independent.
+
+The NahaLabs standard explicitly requires provider abstraction through Vercel AI SDK and tool-grounded AI. 
+
+---
+
+# 35. AI Tool Registry
+
+The AI should not directly mutate the database.
+
+Instead:
+
+```text
+AI
+ ↓
+Typed Tool
+ ↓
+Service
+ ↓
+Database / Integration
+```
+
+Examples:
+
+```text
+get_business_info()
+get_service()
+get_price()
+get_availability()
+create_booking()
+create_payment()
+get_customer()
+get_loyalty_balance()
+send_whatsapp()
+create_campaign()
+get_recovery_opportunity()
+get_demand_signal()
+```
+
+Every tool:
+
+* Zod validated
+* tenant scoped
+* permission checked
+* audited
+
+---
+
+# 36. Multi-Tenancy
+
+Default architecture:
+
+```text
+One Neon database
+        ↓
+tenant_id
+        ↓
+all business tables
+```
+
+Every query must be tenant-scoped.
+
+The NahaLabs standard explicitly requires tenant isolation at the data layer and automated cross-tenant leak testing. 
+
+Roles:
+
+* Owner
+* Admin
+* Member
+* Staff
+* AI Operator
+
+---
+
+# 37. Core Database Domains
+
+The database should ultimately contain these major domains.
+
+```text
+tenants
+users
+roles
+memberships
+
+business_profiles
+locations
+services
+products
+offers
+business_hours
+knowledge_documents
+brand_profiles
+compliance_rules
+
+customers
+customer_preferences
+customer_lifecycle
+loyalty_accounts
+loyalty_transactions
+
+leads
+lead_events
+lead_scores
+conversations
+messages
+
+bookings
+booking_events
+waitlists
+no_show_events
+
+payments
+payment_events
+revenue_events
+
+recovery_opportunities
+recovery_campaigns
+recovery_events
+
+demand_signals
+search_signals
+social_signals
+social_questions
+social_conversations
+
+content_briefs
+content_assets
+content_variants
+content_post_queue
+content_performance
+
+social_accounts
+social_posts
+social_comments
+
+campaigns
+campaign_audiences
+campaign_events
+campaign_attribution
+
+reviews
+
+ad_accounts
+ad_campaigns
+ad_events
+capi_events
+
+ai_memory
+embeddings
+
+notifications
+workflows
+workflow_runs
+events
+audit_logs
+integrations
+```
+
+---
+
+# 38. Content Schema
+
+The earlier `social_questions_bank` idea should be retained, but expanded.
+
+Example conceptual structure:
+
+```text
+social_questions
+ ├── tenant_id
+ ├── platform
+ ├── source_post_id
+ ├── source_comment_id
+ ├── original_text
+ ├── normalized_question
+ ├── category
+ ├── sentiment
+ ├── commercial_intent
+ ├── frequency_count
+ ├── first_seen_at
+ ├── last_seen_at
+ ├── micro_reply_status
+ ├── macro_content_status
+ └── content_brief_id
+```
+
+And:
+
+```text
+content_briefs
+ ├── signal_id
+ ├── source_question_id
+ ├── objective
+ ├── target_audience
+ ├── hook
+ ├── CTA
+ ├── required_facts
+ └── approval_policy
+```
+
+Then:
+
+```text
+content_assets
+ ├── brief_id
+ ├── format
+ ├── platform
+ ├── script
+ ├── caption
+ ├── hashtags
+ ├── media_reference
+ ├── compliance_status
+ └── quality_score
+```
+
+---
+
+# 39. Repository Architecture
+
+Following the NahaLabs standard:
+
+```text
+src/
+  app/
+    (marketing)/
+    (app)/
+      dashboard/
+      leads/
+      customers/
+      bookings/
+      content/
+      demand/
+      recovery/
+      analytics/
+      settings/
+
+    api/
+      webhooks/
+        evolution/
+        payments/
+        meta/
+        google/
+        social/
+      v1/
+
+  modules/
+    tenants/
+    customers/
+    leads/
+    conversations/
+    bookings/
+    payments/
+    loyalty/
+    retention/
+    recovery/
+    demand-radar/
+    social-intelligence/
+    content-engine/
+    publishing/
+    attribution/
+    revenue/
+    analytics/
+    ai/
+    compliance/
+    workflows/
+
+  lib/
+    db/
+    ai/
+    events/
+    notifications/
+
+    integrations/
+      evolution/
+      postiz/
+      meta/
+      google/
+      yoco/
+      payfast/
+      social/
+
+    adapters/
+
+  shared/
+```
+
+This preserves the architectural principle of domain-owned modules and thin route handlers. 
+
+---
+
+# 40. Infrastructure
+
+## Vercel
+
+Hosts:
+
+* Next.js application
+* API routes
+* Server Actions
+* AI endpoints
+* dashboard
+* public websites
+* webhooks
+
+## Neon
+
+Hosts:
+
+* PostgreSQL
+* pgvector
+* application state
+* analytics data
+* event log
+
+## Clerk
+
+Authentication.
+
+## Render
+
+Runs heavier infrastructure:
+
+* Evolution API
+* Postiz
+* workers
+* Playwright jobs
+* other long-running processes
+
+## GitHub
+
+* source control
+* CI
+* scheduled jobs
+* deployment workflows
+
+## Postiz
+
+Social distribution engine.
+
+## Evolution API
+
+WhatsApp infrastructure.
+
+---
+
+# 41. Important Architecture Correction
+
+I would **not use n8n** in this unified system.
+
+Your current NahaLabs standard explicitly says:
+
+> One repo, one deployment, one database, one auth provider, one AI SDK, one WhatsApp provider.
+
+And your current preferred architecture uses Vercel/Next.js services and Render workers rather than introducing another automation platform. 
+
+So the old Revenue OS document's n8n dependency should be removed.
+
+Use:
+
+### Vercel Route Handlers
+
+for webhooks.
+
+### Vercel Cron
+
+for simple scheduled jobs.
+
+### Vercel Workflow / durable workflows
+
+for multi-step processes.
+
+### Render workers
+
+for heavy/long-running jobs.
+
+### GitHub Actions
+
+for scheduled maintenance/wake-up tasks.
+
+This keeps the architecture dramatically simpler.
+
+---
+
+# 42. Autonomous Workflow Engine
+
+Examples:
+
+### Lead workflow
+
+```text
+Lead received
+ ↓
+Validate
+ ↓
+Score
+ ↓
+WhatsApp
+ ↓
+Conversation
+ ↓
+Qualified
+ ↓
+Booking
+ ↓
+Payment
+ ↓
+Revenue event
+```
+
+### Content workflow
+
+```text
+Signal detected
+ ↓
+Classify
+ ↓
+Cluster
+ ↓
+Score opportunity
+ ↓
+Generate brief
+ ↓
+Generate assets
+ ↓
+Compliance check
+ ↓
+Approval policy
+ ↓
+Postiz
+ ↓
+Publish
+ ↓
+Track engagement
+ ↓
+Track leads
+ ↓
+Track revenue
+```
+
+### Recovery workflow
+
+```text
+Opportunity detected
+ ↓
+Score
+ ↓
+Eligibility
+ ↓
+Campaign
+ ↓
+WhatsApp
+ ↓
+Objection handling
+ ↓
+Payment
+ ↓
+Webhook
+ ↓
+Recovered revenue
+```
+
+---
+
+# 43. Autonomous vs Human Control
+
+The system must have a **control plane**.
+
+Every autonomous capability can be:
+
+```text
+OFF
+ASSISTED
+APPROVAL REQUIRED
+AUTONOMOUS
+```
+
+Per tenant.
+
+Per workflow.
+
+Per channel.
+
+Per content category.
+
+This is especially important for regulated verticals.
+
+---
+
+# 44. Compliance
+
+South Africa first means:
+
+## POPIA
+
+Required:
+
+* consent
+* purpose limitation
+* data minimisation
+* retention controls
+* deletion
+* opt-out
+* audit logs
+* tenant isolation
+* access controls
+
+Sensitive industries get additional guardrails.
+
+For clinics:
+
+* no diagnosis
+* no unsafe clinical advice
+* no fabricated treatment claims
+* approved knowledge only
+* human escalation
+
+For financial services:
+
+* no unauthorized financial advice
+* approved product information
+* escalation policies
+
+---
+
+# 45. Social API Reality
+
+One important production correction:
+
+We should **not promise unrestricted "eavesdropping" on every social network**.
+
+2ndLife can only use data that the relevant platform/API legitimately exposes to the connected account and that the tenant is authorized to access.
+
+Therefore:
+
+```text
+Social Intelligence Capability Matrix
+```
+
+should track:
+
+* platform
+* API availability
+* comments
+* mentions
+* DMs
+* publishing
+* analytics
+* webhook support
+* account permissions
+* current limitations
+
+This prevents the product architecture from depending on an API capability that doesn't actually exist.
+
+---
+
+# 46. Content Quality Gate
+
+Before anything gets published:
+
+```text
+FACT CHECK
+ ↓
+BRAND CHECK
+ ↓
+COMPLIANCE CHECK
+ ↓
+CTA CHECK
+ ↓
+DUPLICATION CHECK
+ ↓
+PLATFORM FORMAT CHECK
+ ↓
+APPROVAL POLICY
+ ↓
+PUBLISH
+```
+
+The AI should never invent:
+
+* pricing
+* promotions
+* availability
+* clinical facts
+* guarantees
+* testimonials
+* customer results
+
+---
+
+# 47. Attribution Model
+
+Every customer interaction gets an event trail.
+
+Example:
+
+```text
+Google Search
+ ↓
+Landing Page
+ ↓
+Lead
+ ↓
+WhatsApp
+ ↓
+Booking
+ ↓
+Deposit
+ ↓
+Customer
+```
+
+Or:
+
+```text
+TikTok Comment
+ ↓
+Micro Reply
+ ↓
+WhatsApp
+ ↓
+Booking
+ ↓
+Payment
+```
+
+Or:
+
+```text
+Dormant Customer
+ ↓
+Recovery Campaign
+ ↓
+WhatsApp
+ ↓
+Payment
+```
+
+This enables:
+
+> **Content → conversation → customer → money**
+
+rather than vanity metrics.
+
+---
+
+# 48. Product Dashboard
+
+The homepage should be brutally simple.
+
+## Revenue generated
+
+**R128,400**
+
+## Revenue recovered
+
+**R37,800**
+
+## Revenue currently at risk
+
+**R61,200**
+
+## Leads
+
+**287**
+
+## Hot leads
+
+**63**
+
+## Bookings
+
+**91**
+
+## No-shows prevented
+
+**17**
+
+## Customers reactivated
+
+**43**
+
+## Content-generated leads
+
+**28**
+
+## AI conversations
+
+**1,842**
+
+Then:
+
+### "What should I know today?"
+
+AI-generated business briefing:
+
+> **Your Sandton campaign is producing 31% more enquiries than last week.**
+>
+> 7 people asked about pricing.
+>
+> 4 asked about Saturday availability.
+>
+> Your 14:00–16:00 slot tomorrow has 3 openings.
+>
+> I recommend targeting customers who haven't visited in 45–60 days.
+
+That is the experience.
+
+---
+
+# 49. The Business Owner Doesn't Need to Operate the Machine
+
+The owner should not have to:
+
+* write posts
+* study Google Trends
+* inspect comments
+* manually follow up
+* manually segment customers
+* build campaigns
+* create WhatsApp messages
+* export CSVs
+* analyse CTR
+* check who hasn't returned
+* remember birthdays
+* manually chase payments
+
+The owner should primarily see:
+
+> **What happened?**
+
+> **What am I making?**
+
+> **What is leaking?**
+
+> **What is the system doing next?**
+
+---
+
+# 50. Commercial Model
+
+I would not launch with the old R299/R499 SaaS positioning for the full system.
+
+That undervalues the product.
+
+The architecture supports a managed-service model first.
+
+### Starter / Acquisition
+
+For smaller businesses:
+
+**R4,999–R7,500/month**
+
+Lead capture + AI employee + WhatsApp + basic content.
+
+---
+
+### Growth / Revenue OS
+
+**R9,999–R16,500/month**
+
+Adds:
+
+* Demand Radar
+* social intelligence
+* autonomous content
+* publishing
+* retention
+* attribution
+* recovery
+
+---
+
+### Full Digital Workforce
+
+**R16,500–R25,000+/month**
+
+Adds:
+
+* advanced workflows
+* revenue recovery
+* loyalty
+* advanced analytics
+* AI employees
+* multiple channels
+* multi-location
+
+---
+
+### Enterprise
+
+**R28,000+/month**
+
+For:
+
+* multi-location
+* insurance
+* financial services
+* healthcare groups
+* franchises
+* enterprise integrations
+
+---
+
+# 51. Vertical Packaging
+
+Instead of creating five products, the website can say:
+
+## 2ndLife for Clinics
+
+Powered by the SkySmile configuration.
+
+## 2ndLife for Restaurants
+
+Powered by the HostAI configuration.
+
+## 2ndLife for Salons & Wellness
+
+Powered by Flavourly configuration.
+
+## 2ndLife for Service Businesses
+
+Powered by Lead Machine configuration.
+
+## 2ndLife Revenue Recovery
+
+The original 2ndLife recovery configuration.
+
+**One platform. Multiple revenue systems.**
+
+---
+
+# 52. MVP
+
+Do **not** attempt to build every feature before selling.
+
+The first production wedge should be:
+
+### Phase 1
+
+**AI Revenue Employee**
+
+* WhatsApp
+* lead capture
+* qualification
+* booking
+* follow-up
+* payment
+* dashboard
+
+This gives you something sellable immediately.
+
+---
+
+# 53. Phase 2
+
+### Revenue Recovery
+
+* customer import
+* dormant customer detection
+* recovery scoring
+* WhatsApp campaigns
+* payment verification
+* recovery dashboard
+
+Now the product has a measurable:
+
+> **"We recovered R___ for you."**
+
+story.
+
+---
+
+# 54. Phase 3
+
+### Demand Radar
+
+Implement:
+
+* search demand
+* Google Ads search terms
+* weather
+* local signals
+* business-specific trends
+
+Then:
+
+```text
+Demand detected
+ ↓
+Opportunity
+ ↓
+Content
+```
+
+---
+
+# 55. Phase 4
+
+### Social Intelligence
+
+Add:
+
+* comments
+* questions
+* objections
+* sentiment
+* recurring question detection
+* social question bank
+* micro replies
+
+Then:
+
+```text
+Customer asks
+ ↓
+AI answers
+```
+
+---
+
+# 56. Phase 5
+
+### Autonomous Content Engine
+
+Then:
+
+```text
+Question appears 3 times
+ ↓
+Content opportunity
+ ↓
+AI generates
+ ↓
+Quality gate
+ ↓
+Postiz
+ ↓
+Publish
+```
+
+This is the moment the system starts resembling the Turbine concept you mentioned.
+
+But your version has a major strategic difference:
+
+**Turbine-style automation ends around content.**
+
+2ndLife continues:
+
+```text
+CONTENT
+ ↓
+ENGAGEMENT
+ ↓
+WHATSAPP
+ ↓
+BOOKING
+ ↓
+PAYMENT
+ ↓
+RETENTION
+ ↓
+RECOVERY
+```
+
+That is substantially more valuable.
+
+---
+
+# 57. Phase 6
+
+### Closed-Loop Revenue Intelligence
+
+Connect:
+
+* Meta CAPI
+* Google offline conversions
+* content attribution
+* campaign attribution
+* payment data
+
+Now the system learns:
+
+> which demand → which content → which lead → which customer → which revenue.
+
+---
+
+# 58. Phase 7
+
+### Vertical Intelligence Packs
+
+Build configuration packages.
+
+First:
+
+**Aesthetic/Dental/Medical**
+
+because SkySmile gives you a strong high-ticket case.
+
+Then:
+
+**Restaurants**
+
+Then:
+
+**Salons/Wellness**
+
+Then:
+
+**Trades**
+
+Then:
+
+**Financial/Insurance**
+
+---
+
+# 59. 16-Week Execution Plan
+
+## Weeks 1–2 — Foundation
+
+* Next.js
+* TypeScript strict
+* Tailwind
+* shadcn
+* Clerk
+* Neon
+* Drizzle
+* tenant architecture
+* event system
+* AI abstraction
+* integration abstraction
+* CI
+* Playwright
+* production deployment
+
+---
+
+## Weeks 3–4 — AI Revenue Employee
+
+* Evolution API
+* inbound WhatsApp
+* conversation engine
+* Business Brain
+* lead qualification
+* lead scoring
+* human takeover
+* customer profile
+
+**Deliverable:** real WhatsApp AI employee.
+
+---
+
+## Weeks 5–6 — Booking + Payments
+
+* booking service
+* availability
+* reminders
+* no-show workflow
+* Yoco
+* PayFast abstraction
+* payment webhooks
+* revenue events
+
+**Deliverable:** WhatsApp → booking → payment.
+
+---
+
+## Weeks 7–8 — Recovery Engine
+
+* CSV import
+* customer normalization
+* lifecycle engine
+* recovery scoring
+* dormant customer detection
+* recovery campaigns
+* payment confirmation
+* recovered revenue dashboard
+
+**Deliverable:** first true 2ndLife capability.
+
+---
+
+## Weeks 9–10 — Demand Radar
+
+* Google search signals
+* Google Ads search terms
+* trends
+* weather
+* local signals
+* scoring
+* opportunity detection
+
+**Deliverable:** system knows what demand is emerging.
+
+---
+
+## Weeks 11–12 — Social Intelligence
+
+* social connectors
+* comment ingestion
+* question extraction
+* clustering
+* sentiment
+* commercial intent
+* social question bank
+* micro-replies
+
+**Deliverable:** system listens to customer conversations.
+
+---
+
+## Weeks 13–14 — Autonomous Content
+
+* content briefs
+* AI generation
+* platform variants
+* compliance
+* brand voice
+* approval modes
+* Postiz integration
+* scheduling
+* publishing
+
+**Deliverable:**
+
+```text
+Demand → Content → Social
+```
+
+---
+
+## Weeks 15–16 — Closed Loop
+
+* content attribution
+* social → WhatsApp attribution
+* payment → content attribution
+* Meta CAPI
+* Google offline conversions
+* revenue intelligence
+* executive dashboard
+
+**Deliverable:**
+
+```text
+Demand → Content → Lead → Booking → Revenue
+```
+
+---
+
+# 60. Production Readiness Gate
+
+We do **not** declare the system finished because:
+
+> "the page loads."
+
+Production readiness means:
+
+### Security
+
+* tenant isolation
+* authorization
+* webhook signatures
+* secret management
+* rate limits
+* audit logs
+* POPIA controls
+
+### Reliability
+
+* idempotent webhooks
+* retries
+* graceful degradation
+* error states
+* workflow recovery
+
+### AI
+
+* grounded answers
+* tool validation
+* hallucination tests
+* prompt injection protection
+* golden conversations
+* compliance evaluation
+
+### Payments
+
+* webhook verification
+* amount verification
+* idempotency
+* duplicate-event protection
+
+### WhatsApp
+
+* inbound
+* outbound
+* templates where required
+* human takeover
+* opt-out
+* conversation history
+
+### Social
+
+* account authorization
+* publishing
+* comment ingestion
+* API capability detection
+* failure handling
+
+### Content
+
+* fact checking
+* brand validation
+* compliance
+* duplicate detection
+* approval modes
+
+### Browser
+
+* Playwright production E2E
+
+### Deployment
+
+* Vercel build green
+* production smoke tests
+* `/api/v1/selftest`
+* monitoring
+* rollback
+
+Your engineering standard specifically requires production verification rather than trusting local builds, plus a self-test endpoint and Playwright against the live production URL. 
+
+---
+
+# 61. The "Do Not Stop at Prototype" Rule
+
+This becomes an explicit project requirement:
+
+> **Do not stop at a prototype, mocked dashboard, first successful API call or green local build.**
+
+The implementation cycle is:
+
+```text
+RESEARCH
+ ↓
+BUILD
+ ↓
+RUN
+ ↓
+TEST
+ ↓
+BREAK
+ ↓
+DIAGNOSE
+ ↓
+FIX
+ ↓
+RETEST
+ ↓
+PRODUCTION VERIFY
+ ↓
+MONITOR
+ ↓
+IMPROVE
+```
+
+No feature is considered complete until it works against the actual production environment.
+
+---
+
+# 62. The First Demo
+
+The first demo should be extraordinary but simple.
+
+We onboard a fictional:
+
+### Sandton Aesthetic Clinic
+
+The owner connects:
+
+* website
+* WhatsApp
+* Instagram
+* Facebook
+* Google Business Profile
+
+Then:
+
+### Step 1
+
+A fake customer comments:
+
+> "How much is laser hair removal?"
+
+### Step 2
+
+2ndLife detects it.
+
+### Step 3
+
+AI replies.
+
+### Step 4
+
+Question enters the Social Question Bank.
+
+### Step 5
+
+The same question appears three more times.
+
+### Step 6
+
+Demand Radar marks it a content opportunity.
+
+### Step 7
+
+AI generates:
+
+* Reel
+* TikTok
+* Short
+* carousel
+* Facebook post
+* LinkedIn post
+* X post
+
+### Step 8
+
+Postiz publishes.
+
+### Step 9
+
+Someone clicks.
+
+### Step 10
+
+WhatsApp AI qualifies them.
+
+### Step 11
+
+Booking is made.
+
+### Step 12
+
+Yoco deposit is paid.
+
+### Step 13
+
+2ndLife records:
+
+> **R1,000 recovered/generated revenue**
+
+### Step 14
+
+Revenue event goes back into attribution.
+
+That single demonstration explains the entire company.
+
+---
+
+# 63. The Final Product Architecture
+
+At the highest level:
+
+## 2ndLife has **8 engines**
+
+### 1. Demand Engine
+
+**Find what people want.**
+
+### 2. Content Engine
+
+**Create what people want to see.**
+
+### 3. Distribution Engine
+
+**Publish it everywhere.**
+
+### 4. Conversation Engine
+
+**Talk to people instantly.**
+
+### 5. Conversion Engine
+
+**Turn conversations into bookings/payments.**
+
+### 6. Retention Engine
+
+**Bring customers back.**
+
+### 7. Recovery Engine
+
+**Recover money that would otherwise disappear.**
+
+### 8. Intelligence Engine
+
+**Measure everything and continuously improve the system.**
+
+---
+
+# 64. The Most Important Strategic Insight
+
+This is where I think your collection of ideas has become much more powerful than the individual products.
+
+**SkySmile** solved:
+
+> acquisition → attendance → retention.
+
+**HostAI/Flavourly** solved:
+
+> concierge → booking → loyalty → repeat business.
+
+**Lead Machine** solved:
+
+> website → lead → qualification → WhatsApp.
+
+**2ndLife Recovery** solved:
+
+> dormant revenue → recovery → verified payment.
+
+**Demand Radar** solved:
+
+> market demand → opportunity.
+
+**Social Conversation Mining** solved:
+
+> customer questions → intelligence.
+
+**Autonomous Content** solved:
+
+> intelligence → content → distribution.
+
+**Closed-loop attribution** solved:
+
+> revenue → advertising intelligence.
+
+Together they form:
+
+# **Demand → Attention → Conversation → Conversion → Retention → Recovery → Intelligence → Demand**
+
+That is the actual NahaLabs product.
+
+And it is why I would **not build five SaaS products**.
+
+I would build **one underlying Revenue OS with vertical configurations**.
+
+Your uploaded NahaLabs architecture already gives us the right engineering philosophy for this: modular business domains inside one full-stack application, typed integration adapters, event-driven state, provider abstraction and extraction only when production metrics justify it.  
+
+## The final positioning
+
+> **2ndLife is the AI Revenue Operating System for service businesses.**
+>
+> It watches what customers are searching for and asking, automatically creates and distributes content around real demand, captures enquiries through an AI Revenue Employee, converts them into bookings and payments, prevents no-shows, brings customers back, and recovers revenue that would otherwise be lost.
+>
+> **It doesn't just help businesses market themselves. It operates the revenue cycle.**
+
+That is the PRD I would now treat as the **master source of truth** for building the NahaLabs Revenue OS. 

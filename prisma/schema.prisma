@@ -34,6 +34,12 @@ model Tenant {
   opportunities   RecoveryOpportunity[]
   customerContacts CustomerContact[]
   messages        ConversationMessage[]
+  // Revenue OS — new engine relations
+  demandSignals   DemandSignal[]
+  socialQuestions SocialQuestion[]
+  contentBriefs   ContentBrief[]
+  bookings        Booking[]
+  loyaltyAccounts LoyaltyAccount[]
 }
 
 model User {
@@ -281,4 +287,113 @@ model AuditLog {
 
   @@index([tenantId])
   @@index([entityType, entityId])
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 2ndLife Revenue OS — New Engine Models (PLANNED)
+// These models support the 8-Engine Revenue OS architecture.
+// Activated in the Marketing Brain phase — schema is ready for db push.
+// ═══════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────
+// Demand Radar — detects what the market wants
+// ─────────────────────────────────────────────────────────────
+
+model DemandSignal {
+  id               String   @id @default(cuid())
+  tenantId         String
+  source           String   // 'search', 'social', 'competitor', 'faq'
+  topic            String   // e.g., "teeth whitening cost Sandton"
+  frequency        Int      @default(1)
+  commercialIntent Int      @default(0) // 0-100 score
+  status           String   @default("new") // 'new', 'opportunity', 'briefed', 'published'
+  firstSeenAt      DateTime @default(now())
+  lastSeenAt       DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  questions SocialQuestion[]
+  briefs    ContentBrief[]
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+model SocialQuestion {
+  id             String   @id @default(cuid())
+  tenantId       String
+  signalId       String
+  platform       String   // 'tiktok', 'instagram', 'google_reviews'
+  originalText   String
+  normalizedText String   // clustered canonical question
+  occurrences    Int      @default(1)
+  createdAt      DateTime @default(now())
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  signal DemandSignal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([signalId])
+}
+
+model ContentBrief {
+  id             String   @id @default(cuid())
+  tenantId       String
+  signalId       String
+  objective      String   // 'lead_gen', 'education', 'objection_handling'
+  targetAudience String
+  hook           String
+  cta            String   // e.g., "WhatsApp for a free quote"
+  formats        String   // JSON array: '["reel", "carousel", "seo_article"]'
+  approvalStatus String   @default("draft") // 'draft', 'approved', 'published'
+  createdAt      DateTime @default(now())
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  signal DemandSignal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([signalId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Bookings — for the Conversion Engine
+// ─────────────────────────────────────────────────────────────
+
+model Booking {
+  id           String    @id @default(cuid())
+  tenantId     String
+  customerId   String
+  service      String
+  scheduledAt  DateTime
+  status       String    @default("pending") // 'pending', 'confirmed', 'completed', 'no_show', 'cancelled'
+  price        Float?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Loyalty Accounts — for the Retention Engine
+// ─────────────────────────────────────────────────────────────
+
+model LoyaltyAccount {
+  id          String   @id @default(cuid())
+  tenantId    String
+  customerId  String
+  points      Int      @default(0)
+  tier        String   @default("bronze") // 'bronze', 'silver', 'gold', 'platinum'
+  enrolledAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([customerId])
+  @@unique([tenantId, customerId])
 }
