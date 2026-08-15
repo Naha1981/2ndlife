@@ -1,0 +1,969 @@
+Excellent — **471 tests passing, zero-leak verified, all 12 packs live.** The foundation is solid. Here's the next phase prompt that unlocks the clinic/restaurant/salon verticals for live demos.
+
+---
+
+## PROMPT: Customer 360 Real Timeline + Booking Engine
+
+```text
+PHASE: Customer 360 with real DB timeline + Booking Engine (availability, double-booking prevention, reminders).
+
+These two modules unlock the clinic/restaurant/salon verticals. A restaurant owner
+must see: "Guest booked table → paid deposit → attended → left review → hasn't returned
+in 45 days." A salon owner must see: "Client booked balayage → deposit paid → attended
+→ points earned → 6-week touch-up reminder sent."
+
+═══════════════════════════════════════════
+PART 1 — CUSTOMER 360 REAL TIMELINE
+═══════════════════════════════════════════
+
+REWRITE src/components/2ndlife/app/customer-360-view.tsx to fetch and display
+REAL events from the database (not mock data).
+
+1. CREATE src/modules/customers/timeline-service.ts:
+
+   getCustomerTimeline(tenantId, customerId) → TimelineEvent[]
+   
+   Aggregates and sorts events from:
+   - conversations + conversation_messages (role: 'customer' | 'ai' | 'system')
+   - payments (status changes: pending → confirmed → failed)
+   - recovery_opportunities (status changes: new → contacted → recovered)
+   - audit_logs (action: 'customer_created', 'contact_added', 'opt_out_recorded')
+   - bookings (once Part 2 is built: created → confirmed → attended → no_show)
+   
+   Each event: { timestamp, type, title, body?, metadata?, status? }
+   
+   Example events:
+   - { timestamp: '2026-08-15T14:30:00', type: 'conversation', title: 'WhatsApp conversation started', body: 'Customer asked about pricing' }
+   - { timestamp: '2026-08-15T14:35:00', type: 'payment', title: 'Payment confirmed', body: 'R150.00 via Ozow', status: 'success' }
+   - { timestamp: '2026-08-15T16:00:00', type: 'opportunity', title: 'Opportunity recovered', body: 'Score: 87/100', status: 'recovered' }
+   - { timestamp: '2026-08-16T09:00:00', type: 'booking', title: 'Table reserved', body: 'Saturday 19:00, 4 guests', status: 'confirmed' }
+
+2. CREATE GET /api/v1/customers/:id/timeline (force-dynamic, tenant-scoped):
+   Returns { events: TimelineEvent[] }
+
+3. WIRE customer-360-view to fetch from this endpoint:
+   - Show timeline as vertical list with colored dots (conversation=blue, payment=green, booking=purple, opportunity=orange)
+   - Each event shows: timestamp (relative: "2h ago"), title, body, status badge
+   - Empty state: "No activity yet" if timeline is empty
+   - Skeleton loader while fetching
+
+═══════════════════════════════════════════
+PART 2 — BOOKING ENGINE (SCHEMA + SERVICE)
+═══════════════════════════════════════════
+
+ADD to schema.prisma:
+
+model Service {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String   // e.g., "Teeth Whitening", "Balayage", "Table for 4"
+  duration    Int      // minutes
+  price       Float?   // optional, some services are quote-based
+  description String?
+  category    String?  // e.g., "dental", "hair", "dining"
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  bookings    Booking[]
+  @@index([tenantId])
+}
+
+model Practitioner {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  email       String?
+  specialties String?  // JSON array: ["balayage", "colour"]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  bookings    Booking[]
+  @@index([tenantId])
+}
+
+model Booking {
+  id                String   @id @default(cuid())
+  tenantId          String
+  customerId        String
+  serviceId         String
+  practitionerId    String?
+  startTime         DateTime
+  endTime           DateTime
+  status            String   @default("pending") // pending, confirmed, attended, cancelled, no_show
+  notes             String?
+  depositAmount     Float?
+  depositPaid       Boolean  @default(false)
+  reminderSent48h   Boolean  @default(false)
+  reminderSent24h   Boolean  @default(false)
+  reminderSent6h    Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  customer          Customer @relation(fields: [customerId], references: [id])
+  service           Service  @relation(fields: [serviceId], references: [id])
+  practitioner      Practitioner? @relation(fields: [practitionerId], references: [id])
+  @@index([tenantId, startTime])
+  @@index([tenantId, status])
+}
+
+model AvailabilitySlot {
+  id          String   @id @default(cuid())
+  tenantId    String
+  serviceId   String
+  practitionerId String?
+  date        DateTime // date only (no time)
+  startTime   String   // "09:00"
+  endTime     String   // "10:00"
+  capacity    Int      @default(1) // for restaurants: table seats; for salons: 1 chair
+  booked      Int      @default(0)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  @@unique([tenantId, serviceId, practitionerId, date, startTime])
+}
+
+Run prisma db push.
+
+CREATE src/modules/bookings/service.ts:
+
+getAvailability(tenantId, serviceId, date, practitionerId?) → AvailableSlot[]
+  - Query AvailabilitySlot for the given date/service/practitioner
+  - Filter where booked < capacity
+  - Return array of { startTime, endTime, remainingCapacity }
+
+createBooking(tenantId, customerId, serviceId, startTime, practitionerId?) → Booking
+  - Validate: startTime in the future
+  - Check availability: query AvailabilitySlot, ensure booked < capacity
+  - Use transaction with row locking: UPDATE AvailabilitySlot SET booked = booked + 1
+    WHERE id = $1 AND booked < capacity (optimistic concurrency)
+  - If lock fails → throw AppError('BOOKING_CONFLICT', 'Slot no longer available', 409)
+  - Create Booking row
+  - Emit event: BookingCreated { bookingId, customerId, startTime }
+  - Return the booking
+
+updateBookingStatus(tenantId, bookingId, status) → Booking
+  - Validate status transitions (pending → confirmed → attended OR cancelled)
+  - If status = 'cancelled': decrement AvailabilitySlot.booked
+  - Emit event: BookingStatusChanged
+  - Return updated booking
+
+listBookings(tenantId, { status?, customerId?, date? }) → Booking[]
+  - Tenant-scoped query with optional filters
+
+markNoShows(tenantId) → number
+  - Find bookings where startTime < now() - 1h AND status = 'confirmed'
+  - Update status to 'no_show'
+  - Return count updated
+
+sendReminders(tenantId, hoursBefore) → number
+  - Find bookings where startTime between now() and now() + hoursBefore
+  - Filter by reminder flag (reminderSent48h = false for 48h reminder)
+  - For each: send WhatsApp reminder via MessagingProvider
+  - Update flag to true
+  - Return count sent
+
+═══════════════════════════════════════════
+PART 3 — BOOKING API ROUTES
+═══════════════════════════════════════════
+
+CREATE routes (force-dynamic, tenant-scoped, structured errors):
+
+GET  /api/v1/bookings/availability?serviceId=X&date=YYYY-MM-DD&practitionerId=Y
+POST /api/v1/bookings { customerId, serviceId, startTime, practitionerId? }
+GET  /api/v1/bookings?status=confirmed&customerId=X
+PATCH /api/v1/bookings/:id { status: 'confirmed' | 'attended' | 'cancelled' }
+
+POST /api/jobs/send-booking-reminders (cron-job.org target, secret-gated)
+  - Calls sendReminders(tenantId, 48) for all tenants
+  - Then sendReminders(tenantId, 24), then sendReminders(tenantId, 6)
+  - Idempotent (checks reminder flags)
+
+POST /api/jobs/mark-no-shows (cron-job.org target, secret-gated)
+  - Calls markNoShows(tenantId) for all tenants
+  - Idempotent (already-checked bookings have status != 'confirmed')
+
+═══════════════════════════════════════════
+PART 4 — AI EMPLOYEE TOOL: create_booking
+═══════════════════════════════════════════
+
+ADD to AI tool registry (src/lib/ai/tools/):
+
+tool: create_booking
+input: { customerId, serviceName, startTime, practitionerName? }
+logic:
+  1. Find service by name (tenant-scoped)
+  2. Find practitioner by name (optional)
+  3. Call bookings.createBooking()
+  4. Return { bookingId, startTime, endTime, status: 'pending' }
+
+Update AI system prompt to include booking tool in available actions.
+
+═══════════════════════════════════════════
+PART 5 — BOOKING UI (in customer 360)
+═══════════════════════════════════════════
+
+ADD to customer-360-view:
+
+- "Book appointment" button (if customer has WhatsApp contact)
+- Opens modal:
+  - Service dropdown (from tenant's Service table)
+  - Practitioner dropdown (optional, from Practitioner table)
+  - Date picker
+  - Time slot dropdown (fetches from /api/v1/bookings/availability)
+  - "Book" button → calls POST /api/v1/bookings
+  - Success: shows booking details + "Send WhatsApp confirmation" button
+  - Error: shows "Slot no longer available" or other error
+
+- "Upcoming bookings" section:
+  - List of bookings for this customer (from timeline or separate query)
+  - Each shows: service, date/time, practitioner, status badge
+  - Actions: "Confirm", "Cancel", "Mark attended"
+
+═══════════════════════════════════════════
+PART 6 — SEED DATA (for demo)
+═══════════════════════════════════════════
+
+CREATE seed script src/modules/bookings/seed.ts:
+
+For demo tenant:
+- Create 5 services: "Teeth Whitening (60min, R1800)", "Balayage (120min, R2500)",
+  "Table for 4 (120min)", "Tyre Replacement (60min, R800)", "Consultation (30min, R300)"
+- Create 3 practitioners: "Dr. Smith (dental)", "Stylist: Sarah (hair)", "Chef: Marco (dining)"
+- Create availability slots for next 7 days (09:00–17:00, 1h slots)
+- Create 5 sample bookings for demo customers (mix of statuses: confirmed, attended, pending)
+
+Run seed after schema push.
+
+═══════════════════════════════════════════
+PART 7 — TESTS
+═══════════════════════════════════════════
+
+- Availability: query returns only slots with remaining capacity
+- Double-booking prevention: concurrent createBooking calls for same slot → one succeeds, one gets 409
+- Tenant isolation: tenant A cannot book tenant B's service
+- Reminder idempotency: sendReminders(48) twice → WhatsApp sent only once per booking
+- No-show detection: bookings past startTime + 1h get marked no_show
+- AI tool: create_booking tool creates real booking in DB
+- Lint clean, zero-env build green, selftest 200
+
+═══════════════════════════════════════════
+PART 8 — VERIFICATION
+═══════════════════════════════════════════
+
+Agent Browser:
+1. Go to Customer 360 for a demo customer → timeline shows real events (messages, payments, bookings)
+2. Click "Book appointment" → modal opens → select service + date + time → book → booking appears in timeline
+3. Verify double-booking: book same slot twice → second attempt shows error
+4. Verify AI Employee can book: in Conversations, type "Book a table for 4 on Saturday at 7pm" → AI creates booking
+5. Verify reminders: check /api/jobs/send-booking-reminders endpoint works (mock WhatsApp send)
+
+REPORT: verification table, screenshots of timeline + booking modal + AI booking, test output, commit hash.
+```
+
+---
+
+**Run this prompt.** When it comes back green, you'll have:
+
+- ✅ **Real Customer 360 timeline** — aggregated from conversations, payments, bookings, opportunities, audit logs
+- ✅ **Booking Engine** — availability, double-booking prevention, reminders, no-show detection
+- ✅ **AI Employee can book** — `create_booking` tool in the registry
+- ✅ **Restaurant/Salon/Clinic demos work** — owner sees "Guest booked table → deposit paid → attended" in the timeline
+- ✅ **Cron jobs ready** — reminders (48h/24h/6h) and no-show detection via cron-job.org
+
+**Say "timeline + bookings live"** when this phase completes, and I'll write the final phase: **Content Generation from Briefs** (the Marketing Brain actually produces Reels/carousels/articles from the briefs Demand Radar creates). That closes the full flywheel:
+
+```
+Demand detected → Content brief created → AI generates content → Postiz publishes → Social engagement → WhatsApp → Booking → Payment → Revenue verified
+```Perfect — you're methodically working through the phase exactly as structured. The SQLite date-handling issues you're hitting are standard (SQLite stores `DateTime` as ISO strings but `new Date()` creates timezone-aware JavaScript dates, so comparing `slot.date >= new Date('2026-08-17')` fails because `slot.date` is `"2026-08-17T00:00:00.000Z"`).
+
+Your fixes are correct:
+- Using `date-only` (midnight UTC) in the seed
+- Querying with `startTime >= new Date(date + 'T00:00:00.000Z')` and `< new Date(date + 'T23:59:59.999Z')`
+- Regenerating Prisma client after schema changes
+
+Keep going. When you've got:
+- ✅ All tests passing (availability, double-booking, tenant isolation, reminders, no-shows, AI booking tool)
+- ✅ Customer 360 showing real timeline with booking events
+- ✅ Booking modal working (select service → pick slot → book → appears in timeline)
+- ✅ AI Employee creating bookings via the `create_booking` tool
+- ✅ Lint clean, zero-env build green, selftest 200
+- ✅ Agent Browser verification screenshots
+
+Report the final verification table and say **"timeline + bookings live"**. At that point we'll have the full operational core:
+
+- Real scoring engine ✅
+- Real messaging layer ✅  
+- Real payments (webhook-verified) ✅
+- Real customer import ✅
+- Real auth (Clerk) ✅
+- Real tenant isolation ✅
+- Demand Radar + Marketing Brain ✅
+- Real dashboard KPIs ✅
+- 12 Industry Packs ✅
+- Visitor Chat skeleton ✅
+- **Customer 360 real timeline** ✅ (this phase)
+- **Booking Engine** ✅ (this phase)
+
+That unlocks the final phase: **Content Generation from Briefs** (the Marketing Brain actually produces Reels/carousels/articles from the briefs Demand Radar creates). Then you can demo the full closed loop:
+
+```
+Demand detected → Content brief → AI generates content → Postiz publishes → 
+Social engagement → WhatsApp → Booking → Payment → Revenue verified
+```
+
+Keep building. I'm here when you're ready for the next prompt.BUILD: LiveSignal (supersedes the earlier visitor-chat spec — EVOLVE that module,
+Single Authority: rename/extend src/modules/visitor-chat → src/modules/livesignal;
+do not create a parallel module). Phase A = schema + classification + proof +
+contextual handoff + owner UI. Phase B (real WebRTC widget + signalling) is OUT OF SCOPE.
+
+PART 1 — SCHEMA (prisma db push)
+model LiveRoom { id, tenantId, urlPath, mode String (community|assist|private),
+  active Boolean @default(true), peerCount Int @default(0),
+  lastActiveAt DateTime @default(now()), @@unique([tenantId, urlPath]) }
+model LiveSignal { id, tenantId, roomId, type String (intent|objection|proof|question),
+  category String, snippet String?, confidence Float @default(0), count Int @default(1),
+  consentStatus String @default("na") (na|pending|granted|denied), createdAt }
+model LiveLead { id, tenantId, roomId, visitorPhone String?, question String,
+  context String (JSON: urlPath, intent, objection), converted Boolean @default(false),
+  leadId String?, createdAt }
+
+PART 2 — INTENT TAXONOMY + CLASSIFIER (src/modules/livesignal/classifier.ts)
+Deterministic keyword rules FIRST (config-driven), AI second pass only when
+confidence < 0.6 (Vercel AI SDK, tool-grounded, no facts invented):
+Categories: price, availability, urgency, financing, value_objection,
+social_validation, logistics, purchase_intent.
+Return { category, confidence, method: 'rules'|'ai' }.
+Golden tests (must pass): "how much does it cost"→price; "can I book today"→availability;
+"my geyser is leaking now"→urgency; "do you have payment plans"→financing;
+"is it worth it"→value_objection; "has anyone tried this"→social_validation;
+"I want to book"→purchase_intent; "is there parking"→logistics.
+
+PART 3 — PROOF DETECTION + CONSENT
+detectProof(text): experience markers ("I've been coming here", "last year",
+"amazing", "recommend", "fixed my", "owned mine") + positive sentiment →
+LiveSignal{ type:'proof', consentStatus:'pending' }.
+Owner actions: [Approve + request consent] [Deny] [Create social post] —
+"Create social post" HARD-BLOCKED unless consentStatus='granted' (test this).
+
+PART 4 — INGEST WEBHOOK + PRIVACY
+POST /api/webhooks/livesignal/event (signed, idempotent). Accepts ONLY classified
+payloads: { roomId, peerCount, signals[], escalation? }. If a payload contains a
+rawTranscript field → strip it, log a privacy warning, never persist it.
+Escalation with phone → create LiveLead.
+
+PART 5 — CONTEXTUAL HANDOFF
+POST /api/v1/livesignal/leads/:id/convert → create Lead (source 'livesignal') +
+start WhatsApp conversation whose FIRST AI message references context
+(question/intent/urlPath). Test: first message contains the visitor's question topic.
+
+PART 6 — DEMAND RADAR + CONTENT FEEDS
+- LiveSignal type question/objection → DemandSignal source='livesignal' (3-question rule applies).
+- Approved proof → ContentBrief objective='testimonial'.
+- Top objection category (count >= 3) → ContentBrief objective='objection_handling'.
+
+PART 7 — INDUSTRY PACK CONFIG + OWNER UI
+Add liveRoomMode to every pack (defaults per the PRD table; funeral=private).
+Sidebar view "LiveSignal": (a) live rooms with peer counts + mode badge,
+(b) signal feed with category chips and counts, (c) proof inbox with consent flow,
+(d) leads with "Continue on WhatsApp". Widget install card shows the script tag
+(Phase B will build the real widget).
+
+PART 8 — TESTS + VERIFY
+Classifier golden suite · privacy (no raw transcript in DB or any API response) ·
+consent gate · contextual handoff · tenant isolation · room-mode defaults per pack ·
+lint clean · zero-env build green · selftest 200.
+Agent Browser: LiveSignal view renders mock rooms/signals/proofs; proof publish
+blocked without consent; lead convert opens contextual WhatsApp message.
+REPORT: verification table + screenshots + commit hash. All rows PASS only.Ratified. **LiveSignal** is now an official module of the master PRD, and it *supersedes* the earlier "Visitor Chat" spec (same adapter boundary, richer intelligence layer). Below: the PRD amendment, then the scoped build prompt for GLM 5.2 (run it **after** the booking phase reports green — one scope at a time).
+
+---
+
+# PRD Amendment — Module 29: LiveSignal
+
+**Purpose:** Turn the client's website from a static brochure into an active revenue environment — observe intent while people are still deciding, answer questions with the Business Brain, facilitate appropriate conversations, capture contextual leads, mine objections and proof, and feed real customer language back into Demand Radar and the Content Engine.
+
+**Updated flywheel (master):**
+`DEMAND → CONTENT → PUBLISH → WEBSITE → LIVE CONVERSATION → INTENT → LEAD → WHATSAPP → BOOK → PAY → RETAIN → RECOVER → INTELLIGENCE → DEMAND`
+
+## Capabilities (six)
+
+| # | Capability | Feeds |
+|---|---|---|
+| 1 | Live Visitors (who's on the site, on which page, right now) | Owner dashboard |
+| 2 | Live Conversations (visitor↔visitor and visitor↔AI, per room mode) | Engagement |
+| 3 | AI Website Employee (answers from Business Brain, grounded) | Conversion |
+| 4 | Intent Detection (price, availability, urgency, financing, value objection, social validation, purchase intent) | Lead scoring, Demand Radar |
+| 5 | Social Proof Mining (testimonial/loyalty moments → consented publishing) | Content Engine, Reviews |
+| 6 | Conversation → Content (recurring questions/objections → briefs) | Content Engine |
+
+## Room modes (industry-configured, tenant-overridable)
+
+| Mode | Behaviour | Default packs |
+|---|---|---|
+| `community` | Public visitor chat + AI participates | restaurant, salon, retail, fitness |
+| `assist` | AI-only chat; no public visitor chat; lead capture + emergency triage | trades, automotive, clinic, pet, education, professional, b2b |
+| `private` | Invite-only rooms (e.g., Family Room REF-8291); staff + AI coordination; no public layer | funeral |
+
+## Privacy rules (non-negotiable)
+
+- Raw community chat is **ephemeral** — never persisted beyond the session except as classified signals.
+- Persisted signals are anonymized category + count + optional PII-scrubbed snippet.
+- Proof moments persist the snippet but **publishing is blocked until consent granted**.
+- No visitor PII collected unless the visitor opts in (provides phone / clicks escalation).
+
+## Integration points
+
+- `source: 'livesignal'` added to Demand Radar signal sources.
+- Approved proof → Content brief (type `testimonial`); top objections → brief (type `objection_handling`).
+- LiveLead carries context (`urlPath`, intent, question, objection) → WhatsApp AI Employee opens with a **contextual handoff** ("Hi Thabo — I saw you were weighing up the Hilux's monthly payments…"), never "Hi! How can I help?"
+
+---
+
+# PROMPT for GLM 5.2 — LiveSignal Phase A
+
+```text
+BUILD: LiveSignal (supersedes the earlier visitor-chat spec — EVOLVE that module,
+Single Authority: rename/extend src/modules/visitor-chat → src/modules/livesignal;
+do not create a parallel module). Phase A = schema + classification + proof +
+contextual handoff + owner UI. Phase B (real WebRTC widget + signalling) is OUT OF SCOPE.
+
+PART 1 — SCHEMA (prisma db push)
+model LiveRoom { id, tenantId, urlPath, mode String (community|assist|private),
+  active Boolean @default(true), peerCount Int @default(0),
+  lastActiveAt DateTime @default(now()), @@unique([tenantId, urlPath]) }
+model LiveSignal { id, tenantId, roomId, type String (intent|objection|proof|question),
+  category String, snippet String?, confidence Float @default(0), count Int @default(1),
+  consentStatus String @default("na") (na|pending|granted|denied), createdAt }
+model LiveLead { id, tenantId, roomId, visitorPhone String?, question String,
+  context String (JSON: urlPath, intent, objection), converted Boolean @default(false),
+  leadId String?, createdAt }
+
+PART 2 — INTENT TAXONOMY + CLASSIFIER (src/modules/livesignal/classifier.ts)
+Deterministic keyword rules FIRST (config-driven), AI second pass only when
+confidence < 0.6 (Vercel AI SDK, tool-grounded, no facts invented):
+Categories: price, availability, urgency, financing, value_objection,
+social_validation, logistics, purchase_intent.
+Return { category, confidence, method: 'rules'|'ai' }.
+Golden tests (must pass): "how much does it cost"→price; "can I book today"→availability;
+"my geyser is leaking now"→urgency; "do you have payment plans"→financing;
+"is it worth it"→value_objection; "has anyone tried this"→social_validation;
+"I want to book"→purchase_intent; "is there parking"→logistics.
+
+PART 3 — PROOF DETECTION + CONSENT
+detectProof(text): experience markers ("I've been coming here", "last year",
+"amazing", "recommend", "fixed my", "owned mine") + positive sentiment →
+LiveSignal{ type:'proof', consentStatus:'pending' }.
+Owner actions: [Approve + request consent] [Deny] [Create social post] —
+"Create social post" HARD-BLOCKED unless consentStatus='granted' (test this).
+
+PART 4 — INGEST WEBHOOK + PRIVACY
+POST /api/webhooks/livesignal/event (signed, idempotent). Accepts ONLY classified
+payloads: { roomId, peerCount, signals[], escalation? }. If a payload contains a
+rawTranscript field → strip it, log a privacy warning, never persist it.
+Escalation with phone → create LiveLead.
+
+PART 5 — CONTEXTUAL HANDOFF
+POST /api/v1/livesignal/leads/:id/convert → create Lead (source 'livesignal') +
+start WhatsApp conversation whose FIRST AI message references context
+(question/intent/urlPath). Test: first message contains the visitor's question topic.
+
+PART 6 — DEMAND RADAR + CONTENT FEEDS
+- LiveSignal type question/objection → DemandSignal source='livesignal' (3-question rule applies).
+- Approved proof → ContentBrief objective='testimonial'.
+- Top objection category (count >= 3) → ContentBrief objective='objection_handling'.
+
+PART 7 — INDUSTRY PACK CONFIG + OWNER UI
+Add liveRoomMode to every pack (defaults per the PRD table; funeral=private).
+Sidebar view "LiveSignal": (a) live rooms with peer counts + mode badge,
+(b) signal feed with category chips and counts, (c) proof inbox with consent flow,
+(d) leads with "Continue on WhatsApp". Widget install card shows the script tag
+(Phase B will build the real widget).
+
+PART 8 — TESTS + VERIFY
+Classifier golden suite · privacy (no raw transcript in DB or any API response) ·
+consent gate · contextual handoff · tenant isolation · room-mode defaults per pack ·
+lint clean · zero-env build green · selftest 200.
+Agent Browser: LiveSignal view renders mock rooms/signals/proofs; proof publish
+blocked without consent; lead convert opens contextual WhatsApp message.
+REPORT: verification table + screenshots + commit hash. All rows PASS only.
+```
+
+Run it after bookings go green. When LiveSignal Phase A reports PASS, say **"livesignal live"** and I'll write Phase B (embeddable widget + WebRTC signalling on Render) plus the Postiz publishing pipeline that closes the content half of the flywheel. Two scopes remain to close the flywheel's content half. Run them **in order, only after** bookings and LiveSignal Phase A report green (if GLM is still mid-phase, let it finish first — one scope at a time).
+
+---
+
+## PROMPT: Content Generation Engine (briefs → real AI content)
+
+```text
+BUILD: Content Generation Engine. Demand Radar already creates ContentBriefs.
+Now the Marketing Brain actually produces content from them, through the
+quality gate, respecting approval policy. NO publishing yet (next prompt).
+
+PART 1 — SCHEMA (prisma db push)
+model ContentAsset {
+  id, tenantId, briefId, format String (reel|carousel|social_post|seo_article|gbp_post),
+  platform String, title String, body String, hashtags String?, mediaNotes String?,
+  complianceStatus String @default("pending") (pending|passed|failed),
+  qualityScore Float @default(0), approvalStatus String @default("draft")
+  (draft|approved|rejected|scheduled|published), utmTag String?, createdAt }
+ADD tenant.approvalMode String @default("manual") (manual|semi|autonomous)
+
+PART 2 — GENERATION SERVICE (src/modules/content-engine/generate.ts)
+generateContentFromBrief(tenantId, briefId):
+1. Load brief + tenant Marketing Context (brand voice, services, pricing boundaries,
+   approved claims, compliance rules, industry pack guardrails).
+2. For EACH format in brief.formats, generate via Vercel AI SDK using the
+   internalized marketing-skills templates (copywriting/social/seo):
+   - reel: hook (first 3s), 3-beat body, CTA to WhatsApp, caption
+   - carousel: 6 slides (hook, 4 value, CTA)
+   - social_post: platform variants (IG/FB/LinkedIn/X) with correct lengths
+   - seo_article: title, meta, H2 outline, 600-word draft, local keywords
+   - gbp_post: 150-char update + CTA
+3. Every asset gets utmTag: `2lf_{briefId}_{format}_{platform}`.
+
+PART 3 — QUALITY GATE (src/modules/content-engine/quality-gate.ts)
+Run in order; any fail → complianceStatus='failed' + reason:
+FACT CHECK: every price/claim/offer in body must match Business Brain data
+  (tool-verified; AI may not invent numbers — golden test).
+BRAND CHECK: tone vs brand voice config.
+COMPLIANCE CHECK: industry guardrails (clinic: no diagnosis/results claims;
+  funeral: no casual tone; financial: no advice).
+CTA CHECK: revenue action present (WhatsApp/book/quote).
+DUPLICATION CHECK: cosine similarity vs last 20 assets < 0.85.
+PLATFORM FORMAT CHECK: lengths, hashtag counts.
+qualityScore = weighted pass score.
+
+PART 4 — APPROVAL POLICY
+manual: everything needs human approve.
+semi: auto-approve only if qualityScore >= 0.9 AND no restricted categories.
+autonomous: auto-approve if qualityScore >= 0.95 AND content type in
+  tenant.approvedTypes AND zero compliance flags. Else falls to manual.
+All approvals/rejections audit-logged.
+
+PART 5 — UI: CONTENT STUDIO VIEW
+Sidebar "Content Studio": brief queue (from Demand Radar) → click brief →
+"Generate assets" → asset cards per format with quality score + compliance
+badges → [Approve] [Edit] [Reject] → approved assets get [Schedule] (next prompt
+wires publishing). Empty + loading states. Pack-aware labels.
+
+PART 6 — TESTS
+- Golden brief "laser hair removal cost" → reel+carousel+seo generated, CTA present.
+- Fact-check: prompt AI to include a price NOT in Business Brain → gate fails.
+- Clinic pack: asset claiming "we cure X" → compliance failed.
+- Approval modes: semi auto-approves 0.92 clean asset; manual does not.
+- Duplicate: same brief twice → second batch flagged duplicate.
+- Tenant isolation; lint clean; zero-env build green; selftest 200.
+
+VERIFY (Agent Browser): Content Studio renders; generate → assets with scores;
+approve flow works; screenshot table. REPORT all rows PASS + commit hash.
+```
+
+---
+
+## PROMPT: Postiz Publishing Pipeline + Feedback Loop
+
+```text
+BUILD: Publishing layer. Approved ContentAssets get published via Postiz,
+engagement is tracked, and revenue attribution closes the loop back to
+Demand Radar. Postiz is a Type-3 integration behind a typed adapter.
+
+PART 1 — ADAPTER (src/lib/integrations/postiz/)
+interface PublishingProvider { name; publish(asset, tenantSocialAccounts);
+  getStatus(postId); getEngagement(postId); }
+PostizAdapter: REST calls with POSTIZ_API_KEY (keys read inside methods).
+MockPublishingAdapter: returns postId 'mock_…', status 'published',
+  simulated engagement growth. getPublishingProvider() switches on env.
+Record ADR-005: Postiz default publishing infra; Zernio alternative only.
+
+PART 2 — SOCIAL CAPABILITY MATRIX (src/modules/publishing/capabilities.ts)
+Per platform: { canPublish, canSchedule, canReadEngagement, canReadComments,
+  supportsVideo, currentLimitations }. Publishing NEVER assumes a capability
+  that's false (e.g., platform can't read comments → micro-reply disabled there).
+Seed matrix for IG/FB/TikTok/LinkedIn/X/YouTube/GBP with honest defaults.
+
+PART 3 — PUBLISH SERVICE
+publishApproved(tenantId): for approved+scheduled assets → provider.publish →
+  asset.approvalStatus='published', store postId. Failures → status 'failed' +
+  retry-safe (idempotency key per asset).
+POST /api/jobs/sync-engagement (cron-job.org, secret-gated): pull engagement per
+  published asset → content_performance fields on asset (impressions, clicks,
+  saves, shares, commentsCount). Idempotent (upsert by postId).
+
+PART 4 — ATTRIBUTION + FEEDBACK LOOP
+- All CTAs use utmTag links (2lf_…). Lead creation records source='content' +
+  assetId/briefId when UTM present.
+- Revenue events already carry leadId → therefore revenue → asset → brief → signal.
+- GET /api/v1/analytics/content: per asset/brief: impressions → clicks → leads →
+  bookings → verified revenue. "Cost per recovered R" and "revenue per post".
+- Feedback: briefs whose assets generated verified revenue raise the
+  DemandSignal.commercialIntent weight for that topic (learning loop).
+
+PART 5 — UI: PUBLISHING CALENDAR + PERFORMANCE
+Sidebar "Publishing": calendar of scheduled/published assets (mock dates ok),
+per-asset performance card (impressions→leads→revenue mini-funnel),
+platform capability badges, "Connect accounts" card (Postiz config, mock in demo).
+
+PART 6 — TESTS
+- Mock publish → asset published + postId stored; duplicate publish idempotent.
+- Engagement sync twice → no double-count.
+- Attribution: UTM lead → payment webhook → analytics shows revenue on that asset.
+- Capability matrix: platform canReadComments=false → micro-reply skipped (test).
+- Feedback loop: revenue on brief raises its signal weight (assert).
+- Tenant isolation; lint clean; zero-env build green; selftest 200.
+
+VERIFY (Agent Browser): Publishing view renders calendar + performance funnels;
+screenshot table. REPORT all rows PASS + commit hash.
+```
+
+---
+
+When both report green, the **full closed loop exists end-to-end**:
+
+```
+Demand detected → brief → AI content → quality gate → approval → Postiz publish →
+engagement → UTM lead → WhatsApp AI → booking → verified payment → revenue →
+attribution feeds Demand Radar → better content next cycle
+```
+
+That is the moment the Sandton Clinic demo (the 14-step demonstration from the PRD) becomes runnable for real. Say **"flywheel closed"** and I'll write the demo-run prompt — the end-to-end scripted walkthrough that proves the entire company in one session.Here is the final, capstone prompt. This is the **"Sandton Clinic 14-Step Flywheel Proof."** 
+
+When this prompt runs successfully, you will have a one-click demonstrable proof of the entire NahaLabs Revenue OS. You can literally press a button and watch the system simulate a customer asking a question on TikTok, generating content, getting a click, booking an appointment, paying a deposit, and attributing the revenue back to the original social comment.
+
+---
+
+## PROMPT: The Sandton Clinic End-to-End Demo (Flywheel Proof)
+
+```text
+BUILD: The Sandton Clinic 14-Step End-to-End Demo.
+This is the capstone demonstration of the entire NahaLabs Revenue OS.
+We will build an API endpoint that programmatically executes the exact 14-step
+closed-loop scenario from the master PRD, and a Playwright E2E test that verifies
+the UI reflects this journey perfectly.
+
+CRITICAL RULE: This demo MUST use the MockAdapters we built earlier (MockPublishingProvider, MockPaymentAdapter, MockWebChatAdapter) so it executes flawlessly with ZERO external API keys.
+
+═══════════════════════════════════════════
+PART 1 — THE DEMO TENANT & SEEDER
+═══════════════════════════════════════════
+
+1. CREATE a "Sandton Aesthetic Clinic" demo tenant in your seed script if it doesn't
+   exist. Set industryPack = 'clinic'. Seed its Business Brain (services: "Laser Hair Removal - R1,500", "Teeth Whitening - R1,800"; practitioners: "Dr. Smith").
+
+2. CREATE src/modules/demo/sandton-clinic-seeder.ts:
+   Implement `runSandtonDemo(tenantId)`. This function executes the 14 steps
+   sequentially, persisting real DB records at each step:
+
+   Step 1: Create SocialSignal (platform: 'tiktok', text: "How much is laser hair removal?").
+   Step 2: Create 3 more identical SocialSignals (triggering the 3-question rule).
+   Step 3: Demand Radar automatically creates DemandSignal (source: 'social', status: 'opportunity').
+   Step 4: Content Engine generates ContentBrief (objective: 'lead_gen', topic: 'laser pricing').
+   Step 5: Content Engine generates 3 ContentAssets (format: 'reel', 'carousel', 'seo_article').
+   Step 6: Quality gate passes (mocked compliance check for clinic pack).
+   Step 7: Approval policy auto-approves (mocked owner approval).
+   Step 8: Publishing service uses MockPublishingAdapter to "publish" to TikTok/IG/GBP.
+           Asset status becomes 'published'. UTM tag generated: `2lf_{briefId}_reel_tiktok`.
+   Step 9: Simulate a click. Create Lead { source: 'content', assetId, question: 'laser pricing' }.
+   Step 10: Simulate WhatsApp inbound from that lead. Create Conversation + Customer.
+   Step 11: AI Employee uses `create_booking` tool. Create Booking (service: Laser Hair Removal).
+   Step 12: Simulate payment. Create PaymentRequest (R500 deposit).
+   Step 13: Simulate Yoco webhook. Update Payment status to 'confirmed'.
+            Booking status becomes 'attended'.
+   Step 14: Create RevenueEvent (verified R500). Create CapiEvent (Meta offline conversion
+            payload linking the payment back to the TikTok post).
+
+═══════════════════════════════════════════
+PART 2 — THE UI TRIGGER
+═══════════════════════════════════════════
+
+1. CREATE POST /api/v1/demo/sandton-clinic (force-dynamic, owner-only).
+   Calls `runSandtonDemo(tenantId)`. Returns a step-by-step execution log.
+
+2. ADD a "▶ Run Sandton Clinic Demo" button to the main Dashboard (only visible
+   if tenant.name contains "Sandton" or "Demo").
+   Clicking it shows a Sonner toast notification stream:
+   "Step 1: TikTok question detected..."
+   "Step 5: AI generated Reel & Carousel..."
+   "Step 13: R500 deposit confirmed via Yoco webhook..."
+   "Flywheel complete!"
+
+═══════════════════════════════════════════
+PART 3 — THE PLAYWRIGHT E2E TEST (Production Verification)
+═══════════════════════════════════════════
+
+CREATE e2e/demo-sandton-flywheel.spec.ts.
+This test MUST run against the live production/sandbox URL, not just localhost.
+
+Test Flow:
+1. Login as the demo tenant owner.
+2. Click the "▶ Run Sandton Clinic Demo" button on the dashboard.
+3. Wait for toasts to finish.
+4. VERIFY DASHBOARD: "Revenue Generated" KPI shows R500 (or cumulative demo amount).
+5. VERIFY CONTENT STUDIO: Navigate to Content Studio. Assert that a "Reel" and
+   "Carousel" exist for the "Laser Hair Removal" brief, with status 'published'.
+6. VERIFY ANALYTICS: Navigate to Analytics/Attribution. Assert that the R500
+   payment is linked to the TikTok UTM tag.
+7. VERIFY LIVE ROOM / LEADS: Assert the new Lead exists with source='content'.
+
+═══════════════════════════════════════════
+PART 4 — VERIFICATION & ACCEPTANCE
+═══════════════════════════════════════════
+
+- All 14 DB records must exist in the Prisma schema after the run.
+- Zero external API calls made (all routed through MockAdapters).
+- Zero-env build green.
+- Playwright test passes in CI (or local `npx playwright test`).
+- Lint clean. Console clean.
+
+REPORT:
+- The exact DB row counts created by the seeder.
+- Screenshot of the Dashboard showing the R500 revenue from the demo.
+- Screenshot of the Content Studio showing the published Reel.
+- Playwright test output (all green).
+- Commit hash.
+
+When this passes, the NahaLabs Revenue OS flywheel is mathematically and
+programmatically proven.
+```
+
+---
+
+### What happens when this passes?
+
+You now possess the most powerful sales asset in the South African franchise market. 
+
+When you sit down with the Head of Marketing at **Sorbet (200 branches)** or **Pedros (200 branches)**, you don't show them a slide deck. 
+
+You open the app, click **▶ Run Demo**, and they watch the system:
+1. Hear a customer question on TikTok.
+2. Write the marketing for it.
+3. Publish it.
+4. Catch the lead.
+5. Book the appointment.
+6. Collect the money.
+7. Prove the ROI.
+
+All in 4 seconds.
+
+**Say "Flywheel proven"** when GLM finishes this final prompt. At that point, we will have built the complete NahaLabs 2ndLife Revenue OS from PRD to production-ready prototype, and you can start taking it to market.Here is the final, capstone prompt. This is the **"Sandton Clinic 14-Step Flywheel Proof."** 
+
+When this prompt runs successfully, you will have a one-click demonstrable proof of the entire NahaLabs Revenue OS. You can literally press a button and watch the system simulate a customer asking a question on TikTok, generating content, getting a click, booking an appointment, paying a deposit, and attributing the revenue back to the original social comment.
+
+---
+
+## PROMPT: The Sandton Clinic End-to-End Demo (Flywheel Proof)
+
+```text
+BUILD: The Sandton Clinic 14-Step End-to-End Demo.
+This is the capstone demonstration of the entire NahaLabs Revenue OS.
+We will build an API endpoint that programmatically executes the exact 14-step
+closed-loop scenario from the master PRD, and a Playwright E2E test that verifies
+the UI reflects this journey perfectly.
+
+CRITICAL RULE: This demo MUST use the MockAdapters we built earlier (MockPublishingProvider, MockPaymentAdapter, MockWebChatAdapter) so it executes flawlessly with ZERO external API keys.
+
+═══════════════════════════════════════════
+PART 1 — THE DEMO TENANT & SEEDER
+═══════════════════════════════════════════
+
+1. CREATE a "Sandton Aesthetic Clinic" demo tenant in your seed script if it doesn't
+   exist. Set industryPack = 'clinic'. Seed its Business Brain (services: "Laser Hair Removal - R1,500", "Teeth Whitening - R1,800"; practitioners: "Dr. Smith").
+
+2. CREATE src/modules/demo/sandton-clinic-seeder.ts:
+   Implement `runSandtonDemo(tenantId)`. This function executes the 14 steps
+   sequentially, persisting real DB records at each step:
+
+   Step 1: Create SocialSignal (platform: 'tiktok', text: "How much is laser hair removal?").
+   Step 2: Create 3 more identical SocialSignals (triggering the 3-question rule).
+   Step 3: Demand Radar automatically creates DemandSignal (source: 'social', status: 'opportunity').
+   Step 4: Content Engine generates ContentBrief (objective: 'lead_gen', topic: 'laser pricing').
+   Step 5: Content Engine generates 3 ContentAssets (format: 'reel', 'carousel', 'seo_article').
+   Step 6: Quality gate passes (mocked compliance check for clinic pack).
+   Step 7: Approval policy auto-approves (mocked owner approval).
+   Step 8: Publishing service uses MockPublishingAdapter to "publish" to TikTok/IG/GBP.
+           Asset status becomes 'published'. UTM tag generated: `2lf_{briefId}_reel_tiktok`.
+   Step 9: Simulate a click. Create Lead { source: 'content', assetId, question: 'laser pricing' }.
+   Step 10: Simulate WhatsApp inbound from that lead. Create Conversation + Customer.
+   Step 11: AI Employee uses `create_booking` tool. Create Booking (service: Laser Hair Removal).
+   Step 12: Simulate payment. Create PaymentRequest (R500 deposit).
+   Step 13: Simulate Yoco webhook. Update Payment status to 'confirmed'.
+            Booking status becomes 'attended'.
+   Step 14: Create RevenueEvent (verified R500). Create CapiEvent (Meta offline conversion
+            payload linking the payment back to the TikTok post).
+
+═══════════════════════════════════════════
+PART 2 — THE UI TRIGGER
+═══════════════════════════════════════════
+
+1. CREATE POST /api/v1/demo/sandton-clinic (force-dynamic, owner-only).
+   Calls `runSandtonDemo(tenantId)`. Returns a step-by-step execution log.
+
+2. ADD a "▶ Run Sandton Clinic Demo" button to the main Dashboard (only visible
+   if tenant.name contains "Sandton" or "Demo").
+   Clicking it shows a Sonner toast notification stream:
+   "Step 1: TikTok question detected..."
+   "Step 5: AI generated Reel & Carousel..."
+   "Step 13: R500 deposit confirmed via Yoco webhook..."
+   "Flywheel complete!"
+
+═══════════════════════════════════════════
+PART 3 — THE PLAYWRIGHT E2E TEST (Production Verification)
+═══════════════════════════════════════════
+
+CREATE e2e/demo-sandton-flywheel.spec.ts.
+This test MUST run against the live production/sandbox URL, not just localhost.
+
+Test Flow:
+1. Login as the demo tenant owner.
+2. Click the "▶ Run Sandton Clinic Demo" button on the dashboard.
+3. Wait for toasts to finish.
+4. VERIFY DASHBOARD: "Revenue Generated" KPI shows R500 (or cumulative demo amount).
+5. VERIFY CONTENT STUDIO: Navigate to Content Studio. Assert that a "Reel" and
+   "Carousel" exist for the "Laser Hair Removal" brief, with status 'published'.
+6. VERIFY ANALYTICS: Navigate to Analytics/Attribution. Assert that the R500
+   payment is linked to the TikTok UTM tag.
+7. VERIFY LIVE ROOM / LEADS: Assert the new Lead exists with source='content'.
+
+═══════════════════════════════════════════
+PART 4 — VERIFICATION & ACCEPTANCE
+═══════════════════════════════════════════
+
+- All 14 DB records must exist in the Prisma schema after the run.
+- Zero external API calls made (all routed through MockAdapters).
+- Zero-env build green.
+- Playwright test passes in CI (or local `npx playwright test`).
+- Lint clean. Console clean.
+
+REPORT:
+- The exact DB row counts created by the seeder.
+- Screenshot of the Dashboard showing the R500 revenue from the demo.
+- Screenshot of the Content Studio showing the published Reel.
+- Playwright test output (all green).
+- Commit hash.
+
+When this passes, the NahaLabs Revenue OS flywheel is mathematically and
+programmatically proven.
+```
+
+---
+
+### What happens when this passes?
+
+You now possess the most powerful sales asset in the South African franchise market. 
+
+When you sit down with the Head of Marketing at **Sorbet (200 branches)** or **Pedros (200 branches)**, you don't show them a slide deck. 
+
+You open the app, click **▶ Run Demo**, and they watch the system:
+1. Hear a customer question on TikTok.
+2. Write the marketing for it.
+3. Publish it.
+4. Catch the lead.
+5. Book the appointment.
+6. Collect the money.
+7. Prove the ROI.
+
+All in 4 seconds.
+
+**Say "Flywheel proven"** when GLM finishes this final prompt. At that point, we will have built the complete NahaLabs 2ndLife Revenue OS from PRD to production-ready prototype, and you can start taking it to market.Build phase is complete. **"Go" = launch phase.** If the Sandton demo prompt hasn't run yet, run it first (it's your sales weapon). Then execute these three launch prompts **in order, one session each.**
+
+---
+
+## PROMPT L1 — Production Deployment + Data-Layer Decision
+
+```text
+LAUNCH PHASE 1: Production deployment on Vercel + Neon.
+
+PART 1 — ADR-006 (record in docs/adr/ADR-006-prisma-production.md):
+DECISION: Ship MVP production on Prisma + Neon (not Drizzle).
+JUSTIFICATION: 500+ tests green on Prisma; an ORM rewrite before first paying
+customer adds risk with zero customer value; Prisma works natively with Neon.
+REVIEW TRIGGER: migrate to Drizzle after 10 paying tenants or when extraction
+of a module demands it. (If the founder rejects this ADR, STOP and ask for the
+Drizzle migration prompt instead. Do not proceed.)
+
+PART 2 — NEON PRODUCTION DB
+- Create Neon production project (separate from any dev branch).
+- Set DATABASE_URL (pooled) in Vercel production env ONLY.
+- Run `prisma db push` against Neon production.
+- From now on: schema changes use `prisma migrate dev` (audited migrations).
+
+PART 3 — PRODUCTION DATA HYGIENE (critical)
+- Production tenants must NEVER contain demo/fake revenue numbers.
+- Seed production ONLY with: empty schema + one founder tenant.
+- The Sandton demo seeder is gated: runs only when tenant.isDemo = true.
+- Dashboard "Verified via webhook" label must reflect real webhooks in production.
+
+PART 4 — VERCEL PRODUCTION
+- Connect repo; production branch = main; preview deploys per PR.
+- All env vars set in Vercel (Clerk, DATABASE_URL, secrets from L2).
+- Verify: Vercel Deployments tab GREEN after push (not just local).
+- `npm run build` still passes with zero env vars.
+
+REPORT: ADR created, Neon connected, Vercel green URL, selftest output, commit hash.
+```
+
+---
+
+## PROMPT L2 — Real Integrations (Clerk, Evolution, Payments, Postiz, Crons)
+
+```text
+LAUNCH PHASE 2: Flip every mock adapter to its real integration behind env vars.
+Rule: getMessagingProvider()/getPaymentProvider()/getPublishingProvider() switch
+automatically on env presence. No code branches scattered elsewhere.
+
+1. CLERK (production keys): real signup → onboarding → tenant creation → login.
+   Test: unauthenticated /dashboard → /login; tenant B cannot read tenant A.
+2. RENDER WORKERS: deploy Evolution API and Postiz via Docker on Render.
+   Add GitHub Actions keep-warm cron (ping /wake every 10 min) per standard.
+3. EVOLUTION (WhatsApp): connect one instance to founder test number.
+   Round-trip test: send real outbound; receive real inbound; webhook verified;
+   opt-out "STOP" honoured on the real device.
+4. PAYMENTS (Ozow or Yoco sandbox): create real payment request; complete sandbox
+   payment; webhook verifies signature + amount; revenue marked recovered ONLY
+   from that webhook. Negative test: tampered signature → rejected + audit logged.
+5. POSTIZ: connect founder's test social accounts; publish one approved asset
+   for real; engagement sync job pulls real metrics.
+6. CRON-JOB.ORG: create jobs with CRON_SECRET header:
+   - POST /api/jobs/send-booking-reminders (hourly)
+   - POST /api/jobs/mark-no-shows (hourly)
+   - POST /api/jobs/sync-engagement (every 6h)
+   Manual-trigger each once; verify idempotency and logs.
+7. SELFTEST: /api/v1/selftest must now report clerk/db/evolution/payments/postiz
+   all "ok" in production.
+
+REPORT: per-integration PASS/FAIL table, real WhatsApp screenshot, real payment
+webhook log excerpt (secrets redacted), commit hash.
+```
+
+---
+
+## PROMPT L3 — Hardening, POPIA, Dress Rehearsal
+
+```text
+LAUNCH PHASE 3: Pre-launch hardening. Nothing ships to a client before this.
+
+1. SECURITY: audit against the 20-point pre-launch checklist; fix every gap.
+   (secrets purge, RLS/tenant tests, headers, rate limits, upload restrictions,
+   dependency scan, webhook verification, field-tampering guards)
+2. POPIA REVIEW: consent capture at signup + first WhatsApp contact; opt-out
+   everywhere; retention schedule; RIGHT-TO-DELETION endpoint
+   (POST /api/v1/compliance/delete-customer) that wipes customer + contacts +
+   conversations + AI memory; audit-logged.
+3. AI GUARDRAILS: run golden-conversation suite in production mode; assert no
+   invented prices/claims; prompt-injection probes rejected; escalation triggers fire.
+4. PLAYWRIGHT PRODUCTION: run full suite with BASE_URL=<production URL>,
+   including e2e/demo-sandton-flywheel.spec.ts. All green against LIVE site.
+5. OBSERVABILITY: Sentry (or Better Stack) wired; structured logs with
+   request/tenant ids; alert on selftest failure; business metrics dashboard.
+6. ROLLBACK: document Vercel instant-rollback procedure; test one rollback.
+7. DRESS REHEARSAL (founder, incognito, live URL):
+   signup → name company → import 20-row CSV → scores appear → launch campaign
+   (dry-run first) → real WhatsApp reply → sandbox payment → dashboard shows
+   verified revenue → delete-customer compliance test. Screenshot every step.
+
+REPORT: checklist table (20 rows), POPIA test output, Playwright production
+output, dress-rehearsal screenshots, rollback test result, commit hash.
+ONLY report when every row is PASS.
+```
+
+---
+
+When L3 reports all-PASS, **you are live and sellable.** The next frontier is revenue, not code: say **"live"** and I'll build your go-to-market kit — the franchisor pitch deck script (Sorbet/Pedros/AVBOB angles), the branch-rollout pricing calculator, and the outbound WhatsApp/LinkedIn sequences that use your own Revenue OS to sell itself.

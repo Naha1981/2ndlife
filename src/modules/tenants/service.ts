@@ -1,7 +1,11 @@
 /**
  * Tenant context resolution.
- * In production: maps Clerk userId → tenant via memberships table.
- * In this sandbox demo: uses a seeded demo tenant so the API works without auth.
+ *
+ * Two modes:
+ * 1. Clerk mode (CLERK_SECRET_KEY present): auth().userId → users.clerk_id → membership → tenant
+ * 2. Demo mode (no Clerk): returns seeded demo tenant + UI shows "Demo mode" banner
+ *
+ * This is the SINGLE AUTHORITY for tenant resolution.
  */
 
 import { db } from "@/lib/db";
@@ -12,20 +16,47 @@ export interface TenantContext {
   name: string;
   industry: string;
   role: "owner" | "admin" | "member";
+  demoMode: boolean;
 }
 
 /**
- * Demo mode: returns the seeded demo tenant.
- * Production: would look up memberships by clerkId.
+ * Check if Clerk is configured.
+ */
+export function isClerkConfigured(): boolean {
+  return !!process.env.CLERK_SECRET_KEY && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+}
+
+/**
+ * Get the tenant context for the current request.
+ *
+ * In Clerk mode: looks up the user by clerkId, finds their membership, returns tenant.
+ * In demo mode: returns the seeded demo tenant.
  */
 export async function getTenantContext(clerkId?: string): Promise<TenantContext | null> {
   if (!db) throw new AppError("DATABASE_NOT_CONFIGURED", "Database not configured");
 
-  // In production, this would be:
-  // const membership = await db.membership.findFirst({
-  //   where: { user: { clerkId } },
-  //   include: { tenant: true }
-  // });
+  // Clerk mode: if Clerk is configured, try to resolve via clerkId
+  if (isClerkConfigured()) {
+    // In API routes, clerkId comes from auth().userId
+    // For now, if no clerkId is passed, fall back to demo tenant
+    // (This allows the demo to work even with Clerk configured but no signed-in user)
+    if (clerkId) {
+      const membership = await db.membership.findFirst({
+        where: { user: { clerkId } },
+        include: { tenant: true, user: true },
+      });
+
+      if (membership) {
+        return {
+          id: membership.tenant.id,
+          name: membership.tenant.name,
+          industry: membership.tenant.industry,
+          role: membership.role as "owner" | "admin" | "member",
+          demoMode: false,
+        };
+      }
+    }
+  }
 
   // Demo mode: return the seeded demo tenant
   const tenant = await db.tenant.findFirst({
@@ -38,11 +69,13 @@ export async function getTenantContext(clerkId?: string): Promise<TenantContext 
     name: tenant.name,
     industry: tenant.industry,
     role: "owner",
+    demoMode: !isClerkConfigured(),
   };
 }
 
 /**
  * Creates a new tenant with an owner membership.
+ * Used during onboarding when a new Clerk user signs up.
  */
 export async function createTenantWithOwner(input: {
   name: string;
@@ -82,6 +115,7 @@ export async function createTenantWithOwner(input: {
       name: tenant.name,
       industry: tenant.industry,
       role: "owner" as const,
+      demoMode: false,
     };
   });
 }

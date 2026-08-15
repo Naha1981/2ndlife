@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Logo } from "../shared/logo";
 import { Icon } from "../shared/icon";
 import { useAppStore, type AppView } from "@/lib/2ndlife/store";
@@ -97,9 +98,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ─────── MAIN ─────── */}
       <div className="flex-1 flex flex-col min-w-0">
+        <DemoBanner />
         <AppHeader />
         <main className="flex-1 p-4 lg:p-6 overflow-x-hidden">{children}</main>
       </div>
+    </div>
+  );
+}
+
+/* ─────────── Demo Mode Banner ─────────── */
+
+function DemoBanner() {
+  const [show, setShow] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
+
+  useEffect(() => {
+    // Check if we're in demo mode (Clerk not configured)
+    fetch("/api/v1/selftest")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status?.clerk === "missing") {
+          setDemoMode(true);
+          setShow(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!show || !demoMode) return null;
+
+  return (
+    <div className="bg-amber-100 border-b border-amber-200 px-4 py-2 flex items-center gap-2 text-xs text-amber-800">
+      <Icon name="warn" size={14} className="shrink-0" />
+      <span className="font-semibold">Demo mode:</span>
+      <span>Clerk auth not configured. Add CLERK_SECRET_KEY + NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY to enable real authentication.</span>
+      <button
+        onClick={() => setShow(false)}
+        className="ml-auto text-amber-600 hover:text-amber-800 shrink-0"
+      >
+        <Icon name="x" size={12} />
+      </button>
     </div>
   );
 }
