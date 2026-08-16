@@ -16,6 +16,7 @@ import { Customer360View } from "@/components/2ndlife/screens/customer-360-view"
 import { ConversationsView } from "@/components/2ndlife/screens/conversations-view";
 import { CampaignBuilderView } from "@/components/2ndlife/screens/campaign-builder-view";
 import { DemandRadarView } from "@/components/2ndlife/screens/demand-radar-view";
+import { LiveSignalScreen } from "@/components/2ndlife/screens/live-signal/live-signal-screen";
 import {
   CustomersView,
   CampaignsView,
@@ -74,6 +75,7 @@ export default function Home() {
     <AppShell>
       {view === "dashboard" && <DashboardView />}
       {view === "demand-radar" && <DemandRadarView />}
+      {view === "live-signal" && <LiveSignalScreen />}
       {view === "imports" && <ImportWizardView />}
       {view === "customer-detail" && <Customer360View />}
       {view === "conversations" && <ConversationsView />}

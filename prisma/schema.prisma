@@ -40,6 +40,10 @@ model Tenant {
   contentBriefs   ContentBrief[]
   bookings        Booking[]
   loyaltyAccounts LoyaltyAccount[]
+  // LiveSignal Phase A
+  liveRooms       LiveRoom[]
+  liveSignals     LiveSignal[]
+  liveLeads       LiveLead[]
 }
 
 model User {
@@ -396,4 +400,66 @@ model LoyaltyAccount {
   @@index([tenantId])
   @@index([customerId])
   @@unique([tenantId, customerId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// LiveSignal Phase A — live visitor intent intelligence
+// Raw transcripts are NEVER persisted. Only classified excerpts
+// (≤120 chars, PII-stripped) are written to LiveSignal.excerpt.
+// ─────────────────────────────────────────────────────────────
+
+model LiveRoom {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  mode      String   @default("private") // private | community (community blocked until Phase B)
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  signals LiveSignal[]
+  leads   LiveLead[]
+
+  @@index([tenantId])
+}
+
+model LiveSignal {
+  id              String   @id @default(cuid())
+  tenantId        String
+  roomId          String
+  // 8 categories: price | availability | urgency | financing |
+  //   value_objection | social_validation | logistics | purchase_intent
+  category        String
+  excerpt         String   // ≤120 chars, PII-stripped — RAW TRANSCRIPT NEVER STORED
+  promotedToRadar Boolean  @default(false)
+  occurrences     Int      @default(1)
+  createdAt       DateTime @default(now())
+
+  tenant Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  room   LiveRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([roomId])
+  @@index([category])
+}
+
+model LiveLead {
+  id            String    @id @default(cuid())
+  tenantId      String
+  roomId        String
+  sessionId     String    @unique  // anonymous visitor token — no PII
+  signalIds     String    @default("[]") // JSON array of LiveSignal ids
+  handoffSent   Boolean   @default(false)
+  handoffAt     DateTime?
+  // Proof consent gate — publishing blocked until 'granted'
+  consentStatus String    @default("pending") // pending | granted | denied
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  room   LiveRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([roomId])
 }

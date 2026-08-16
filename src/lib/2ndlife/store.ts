@@ -6,6 +6,7 @@ export type AppView =
   | "landing"
   | "dashboard"
   | "demand-radar"
+  | "live-signal"
   | "campaigns"
   | "campaigns-new"
   | "conversations"
@@ -16,6 +17,7 @@ export type AppView =
   | "reports"
   | "integrations"
   | "settings";
+
 
 /**
  * Marketing view state — supports:

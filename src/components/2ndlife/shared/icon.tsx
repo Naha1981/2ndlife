@@ -44,6 +44,8 @@ import {
   User,
   AlertCircle,
   CheckCheck,
+  Signal,
+  Brain,
   type LucideIcon,
 } from "lucide-react";
 
@@ -91,6 +93,8 @@ const map: Record<string, LucideIcon> = {
   user: User,
   alert: AlertCircle,
   checkCheck: CheckCheck,
+  signal: Signal,
+  brain: Brain,
 };
 
 export function Icon({

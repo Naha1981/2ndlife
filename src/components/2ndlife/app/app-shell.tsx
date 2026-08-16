@@ -19,6 +19,7 @@ const viewToNav: Record<AppView, string> = {
   landing: "dashboard",
   dashboard: "dashboard",
   "demand-radar": "demand-radar",
+  "live-signal": "live-signal",
   campaigns: "campaigns",
   "campaigns-new": "campaigns",
   conversations: "conversations",
