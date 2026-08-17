@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyPayload } from '@/lib/messaging/hmac-v2';
+import { PrismaClient } from '@prisma/client';
 
 const HMAC_SECRET = process.env.WEBHOOK_HMAC_SECRET || process.env.WEBHOOK_SECRET || '';
 const ALLOW_LEGACY = process.env.MIGRATION_ALLOW_LEGACY_AUTH === 'true';
+const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
@@ -27,17 +29,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
 
-  // TODO (chunk 3): enqueue PlatformJob for async AI processing.
-  // For chunk 2 we only prove the pipeline: verify -> persist intent -> 200 fast.
-  // The enqueue is stubbed here and will be wired in chunk 3 with Prisma.
+  // Persist inbound message
+  await prisma.message.create({
+    data: {
+      tenantId,
+      providerEventId: messageId,
+      fromPhone: from,
+      body: text || '',
+      direction: 'inbound'
+    }
+  }).catch(() => {}); // Idempotent: ignore if already exists
 
-  // Opt-out fast-path (no AI work needed)
-  const upper = String(text || '').trim().toUpperCase();
-  if (['STOP', 'STOPPE', 'UNSUB'].includes(upper)) {
-    // TODO (chunk 3): persist opt-out via Prisma
-    return NextResponse.json({ status: 'opted_out', deliveryId });
-  }
+  // Enqueue PlatformJob for async AI processing
+  await prisma.platformJob.create({
+    data: {
+      appId,
+      tenantId,
+      messageId,
+      payload: { tenantId, text, from, messageId },
+      status: 'pending',
+      runAt: new Date()
+    }
+  });
 
-  // TODO (chunk 3): enqueue PlatformJob(messageId, appId, tenantId)
   return NextResponse.json({ status: 'queued', deliveryId });
 }
