@@ -18,6 +18,7 @@ datasource db {
 // ─────────────────────────────────────────────────────────────
 
 model Tenant {
+  whatsAppAccountId String?
   id        String   @id @default(cuid())
   name      String
   industry  String   @default("general") // funeral-insurance, subscriptions, financial-services, education, healthcare, retail, b2b-services, general
