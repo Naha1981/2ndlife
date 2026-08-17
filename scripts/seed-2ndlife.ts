@@ -1,3 +1,4 @@
+if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEEDING !== "true") { console.log("Seeding blocked in production."); process.exit(0); }
 /**
  * 2ndLife — Seed script
  * Creates a demo tenant + demo customers for local development.
