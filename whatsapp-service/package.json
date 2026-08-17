@@ -1,0 +1,19 @@
+{
+  "name": "naha-wa-operator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NahaLabs Messaging Platform operator (ADR-014 v4) - Baileys transport",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/store.js && node --check src/transport.js && node --check src/server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.9",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "pg": "^8.12.0",
+    "ioredis": "^5.4.1"
+  },
+  "engines": { "node": ">=20" }
+}
