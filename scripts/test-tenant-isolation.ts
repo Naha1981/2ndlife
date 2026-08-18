@@ -1,4 +1,4 @@
-if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEEDING !== "true") { console.log("Seeding blocked in production."); process.exit(0); }
+if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEEDING !== "true") { console.log("[seed] blocked in production"); process.exit(0); }
 /**
  * 2ndLife — Tenant isolation test
  * Verifies that tenant B cannot read tenant A's customers.

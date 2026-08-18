@@ -1,33 +1,43 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getProviderName } from "@/lib/2ndlife/messaging/provider";
-import { getPaymentProviderName } from "@/lib/2ndlife/payments/provider";
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+export const dynamic = 'force-dynamic';
 
-/**
- * GET /api/v1/selftest
- * Structured config status — ZERO secret values echoed.
- * Returns 200 if all critical services are at least "ok" or "missing" (graceful).
- */
 export async function GET() {
-  const status = {
-    clerk: !!process.env.CLERK_SECRET_KEY ? "ok" : "missing",
-    db: !!process.env.DATABASE_URL ? (db ? "ok" : "failed") : "missing",
-    messaging: getProviderName(), // 'evolution' | 'mock'
-    payments: getPaymentProviderName(), // 'ozow' | 'mock' | 'payfast'
-    evolution: !!process.env.EVOLUTION_API_URL ? "ok" : "not_configured",
-    ozow: !!process.env.OZOW_API_KEY ? "ok" : "not_configured",
-    webhookSecret: !!process.env.EVOLUTION_WEBHOOK_SECRET ? "ok" : "not_configured",
-    paymentWebhookSecret: !!process.env.PAYMENT_WEBHOOK_SECRET ? "ok" : "not_configured",
+  const prisma = new PrismaClient();
+  const startedAt = Date.now();
+
+  const checks: Record<string, unknown> = {
+    node_env: process.env.NODE_ENV || 'unknown',
     timestamp: new Date().toISOString(),
   };
 
-  // Healthy = db is ok (everything else is optional for the demo to run)
-  const healthy = status.db === "ok";
-  return NextResponse.json(
-    { status, healthy },
-    { status: healthy ? 200 : 503 }
-  );
+  // Database connectivity
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.database = 'ok';
+  } catch {
+    checks.database = 'fail';
+  }
+
+  // Required secrets present (NEVER log values)
+  checks.clerk_secret = !!process.env.CLERK_SECRET_KEY;
+  checks.clerk_publishable = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  checks.whatsapp_platform_url = !!process.env.WHATSAPP_PLATFORM_URL;
+  checks.webhook_hmac_secret = !!process.env.WEBHOOK_HMAC_SECRET;
+  checks.cron_secret = !!process.env.CRON_SECRET;
+  checks.payfast_merchant_id = !!process.env.PAYFAST_MERCHANT_ID;
+  checks.payfast_merchant_key = !!process.env.PAYFAST_MERCHANT_KEY;
+  checks.ai_api_key = !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY);
+
+  const failed = Object.entries(checks)
+    .filter(([, v]) => v === 'fail' || v === false)
+    .map(([k]) => k);
+
+  return NextResponse.json({
+    status: failed.length === 0 ? 'ok' : 'degraded',
+    checks,
+    failed,
+    duration_ms: Date.now() - startedAt,
+  });
 }
