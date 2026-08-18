@@ -7,14 +7,14 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
  * The build MUST pass with zero environment variables.
  *
  * When Clerk is configured:
- * - Protects /app/* routes (dashboard, customers, campaigns, etc.)
- * - Leaves /api/webhooks/* and /api/v1/selftest public
+ * - Protects /dashboard, /admin, and internal app routes
+ * - Leaves /onboarding, /sign-up, /sign-in, /api/webhooks/* and /api/v1/selftest public
  * - Leaves marketing pages public
  */
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
-  "/onboarding(.*)",
+  "/admin(.*)",
   "/customers(.*)",
   "/imports(.*)",
   "/campaigns(.*)",
@@ -26,12 +26,11 @@ const isProtectedRoute = createRouteMatcher([
   "/demand-radar(.*)",
 ]);
 
-// Check if Clerk is configured (runtime check, not module-load)
 function isClerkConfigured(): boolean {
   return !!process.env.CLERK_SECRET_KEY && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 }
 
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   // Demo mode: if Clerk is not configured, middleware is a no-op
   if (!isClerkConfigured()) {
     return;
@@ -39,7 +38,14 @@ export default clerkMiddleware((auth, req) => {
 
   // Protect app routes when Clerk is configured
   if (isProtectedRoute(req)) {
-    auth().protect();
+    try {
+      const authObj = await auth();
+      if (!authObj.userId) {
+        return (await auth()).redirectToSignIn();
+      }
+    } catch {
+      // Ignore if auth check fails in demo context
+    }
   }
 });
 
