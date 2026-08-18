@@ -24,6 +24,7 @@ import {
   ChevronDown,
   Menu,
 } from "lucide-react";
+import Link from "next/link";
 import { useState, useCallback } from "react";
 import { verticalOrder, verticalLabels, verticals } from "@/lib/2ndlife/verticals";
 import { useCaseOrder, useCaseLabels } from "@/lib/2ndlife/use-cases";
@@ -132,18 +133,27 @@ export function LandingPage() {
             </button>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={enterApp}
-              className="text-sm text-gray-300 hover:text-white transition hidden sm:block"
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <Link
+              href="/sign-in"
+              className="text-sm text-gray-300 hover:text-white transition font-medium px-2 py-1 hidden sm:block"
             >
               Login
-            </button>
+            </Link>
             <Button
-              onClick={enterApp}
-              className="bg-[#16a34a] hover:bg-[#15803d] text-white rounded-full px-5 h-10 font-semibold shadow-sm"
+              asChild
+              className="bg-[#16a34a] hover:bg-[#15803d] text-white rounded-full px-4 sm:px-5 h-9 sm:h-10 font-semibold shadow-sm text-xs sm:text-sm cursor-pointer"
             >
-              Book a Demo <ArrowRight className="ml-1 w-4 h-4" />
+              <Link href="/sign-up">
+                Get Started <ArrowRight className="ml-1 w-3.5 h-3.5" />
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={enterApp}
+              className="border-emerald-700/80 bg-transparent text-gray-200 hover:bg-white/10 hover:text-white rounded-full px-3.5 h-9 sm:h-10 font-medium text-xs hidden md:flex"
+            >
+              Book Demo
             </Button>
 
             {/* Mobile menu trigger */}
@@ -218,15 +228,24 @@ export function LandingPage() {
                       Privacy
                     </button>
                   </div>
-                  <div className="border-t border-[#0a3b2c] mt-2 pt-3 px-1">
+                  <div className="border-t border-[#0a3b2c] mt-2 pt-3 px-1 space-y-2">
+                    <Button
+                      asChild
+                      className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-semibold"
+                    >
+                      <Link href="/sign-up">
+                        Get Started Free <ArrowRight className="ml-1 w-4 h-4" />
+                      </Link>
+                    </Button>
                     <Button
                       onClick={() => {
                         enterApp();
                         setMobileOpen(false);
                       }}
-                      className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white"
+                      variant="outline"
+                      className="w-full border-gray-600 bg-transparent text-white hover:bg-white/10"
                     >
-                      Book a Demo <ArrowRight className="ml-1 w-4 h-4" />
+                      Book a Demo
                     </Button>
                   </div>
                 </nav>
@@ -258,17 +277,27 @@ export function LandingPage() {
             </div>
             <div className="flex flex-wrap gap-4 justify-center">
               <Button
+                asChild
                 size="lg"
-                onClick={enterApp}
-                className="bg-[#16a34a] hover:bg-[#15803d] text-white"
+                className="bg-[#16a34a] hover:bg-[#15803d] text-white font-bold px-8 shadow-xl shadow-emerald-950/40 cursor-pointer"
               >
-                Book a Demo <ArrowRight className="ml-2 w-4 h-4" />
+                <Link href="/sign-up">
+                  Start Free <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => goToSection("how-it-works")}
+                onClick={enterApp}
                 className="bg-transparent border-gray-600 text-white hover:bg-white/10"
+              >
+                Book a Demo
+              </Button>
+              <Button
+                size="lg"
+                variant="ghost"
+                onClick={() => goToSection("how-it-works")}
+                className="text-gray-300 hover:text-white hover:bg-white/5"
               >
                 See How It Works
               </Button>
@@ -425,15 +454,29 @@ export function LandingPage() {
         {/* ─────── CTA ─────── */}
         <section className="bg-[#052e22] text-white py-20 px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to give your revenue a second life?</h2>
-          <p className="text-gray-300 mb-8">Join forward-thinking businesses who are recovering more, spending less, and growing stronger.</p>
-          <Button
-            size="lg"
-            onClick={enterApp}
-            className="bg-[#16a34a] hover:bg-[#15803d] text-white"
-          >
-            Book Your Free Demo
-          </Button>
-          <p className="text-xs text-gray-400 mt-6">No setup fees · No long-term contracts · Pay only for results</p>
+          <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+            Join forward-thinking businesses recovering lapsed customers, winning back abandoned carts, and collecting overdue invoices.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="bg-[#16a34a] hover:bg-[#15803d] text-white font-bold px-8 shadow-xl shadow-emerald-950/40 cursor-pointer"
+            >
+              <Link href="/sign-up">
+                Get Started Free <ArrowRight className="ml-2 w-4 h-4" />
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={enterApp}
+              className="bg-transparent border-gray-600 text-white hover:bg-white/10"
+            >
+              Book Your Free Demo
+            </Button>
+          </div>
+          <p className="text-xs text-gray-400 mt-6">No setup fees · No long-term contracts · 14-day free trial</p>
         </section>
       </main>
 
