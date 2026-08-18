@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 /**
  * 2ndLife Logo — inline SVG (transparent background, scales losslessly).
  * The circular arrow mark is always brand green (#16a34a).
@@ -7,6 +9,7 @@
  * controls them: white on dark green headers, dark green on light backgrounds.
  *
  * One logo. No separate text block beside it. The SVG IS the brand.
+ * Double-clicking any logo navigates to the Super Admin console (/admin).
  */
 
 interface LogoProps {
@@ -14,6 +17,7 @@ interface LogoProps {
   height?: number;
   className?: string;
   showTagline?: boolean;
+  onDoubleClick?: () => void;
 }
 
 export function Logo({
@@ -21,12 +25,23 @@ export function Logo({
   height = 40,
   className = "",
   showTagline = true,
+  onDoubleClick,
 }: LogoProps) {
+  const router = useRouter();
   const color = variant === "light" ? "#ffffff" : "#052e22";
   // viewBox is 720×220, so width = height × (720/220) ≈ height × 3.27
   const width = Math.round(height * 3.27);
   // Tagline is unreadable below 56px — render wordmark only at smaller sizes
   const showTaglineResolved = showTagline && height >= 56;
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDoubleClick) {
+      onDoubleClick();
+    } else {
+      router.push("/admin");
+    }
+  };
 
   return (
     <svg
@@ -37,7 +52,8 @@ export function Logo({
       width={width}
       height={height}
       style={{ color, display: "block" }}
-      className={className}
+      className={`cursor-pointer select-none ${className}`}
+      onDoubleClick={handleDoubleClick}
     >
       {/* Circular recovery arrow — always brand green */}
       <g>

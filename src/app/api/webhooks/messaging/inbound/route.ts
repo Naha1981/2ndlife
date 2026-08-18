@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyPayload } from '@/lib/messaging/hmac-v2';
 import { PrismaClient } from '@prisma/client';
+import { getAiEnabled } from '@/lib/admin/settings';
 
 const HMAC_SECRET = process.env.WEBHOOK_HMAC_SECRET || process.env.WEBHOOK_SECRET || '';
 const ALLOW_LEGACY = process.env.MIGRATION_ALLOW_LEGACY_AUTH === 'true';
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Persist inbound message
-  await prisma.message.create({
+  await (prisma as any).message?.create?.({
     data: {
       tenantId,
       providerEventId: messageId,
@@ -39,6 +40,12 @@ export async function POST(req: NextRequest) {
       direction: 'inbound'
     }
   }).catch(() => {}); // Idempotent: ignore if already exists
+
+  // Check AI master switch
+  const aiEnabled = await getAiEnabled();
+  if (!aiEnabled) {
+    return NextResponse.json({ status: 'ai_disabled', deliveryId });
+  }
 
   // Enqueue PlatformJob for async AI processing
   await prisma.platformJob.create({

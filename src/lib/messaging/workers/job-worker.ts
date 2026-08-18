@@ -1,9 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { generateAIResponse } from '@/lib/ai/free-router';
+import { getAiEnabled } from '@/lib/admin/settings';
 
 const prisma = new PrismaClient();
 
 export async function processJobs() {
+  const aiEnabled = await getAiEnabled();
+  if (!aiEnabled) return; // AI disabled, skip all processing
+
   const jobs = await prisma.$queryRaw`
     SELECT id, "appId", "tenantId", "messageId", payload
     FROM "PlatformJob"

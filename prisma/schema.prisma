@@ -502,3 +502,10 @@ model PlatformJob {
   @@index([status, runAt])
   @@index([messageId])
 }
+
+model PlatformSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
