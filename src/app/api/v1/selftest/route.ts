@@ -28,10 +28,29 @@ export async function GET() {
   checks.cron_secret = !!process.env.CRON_SECRET;
   checks.payfast_merchant_id = !!process.env.PAYFAST_MERCHANT_ID;
   checks.payfast_merchant_key = !!process.env.PAYFAST_MERCHANT_KEY;
-  checks.ai_api_key = !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY);
+  checks.ai_api_key = !!(
+    process.env.GOOGLE_AI_API_KEY ||
+    process.env.GROQ_API_KEY ||
+    process.env.OPENAI_API_KEY ||
+    process.env.ANTHROPIC_API_KEY
+  );
+  checks.google_ai = !!process.env.GOOGLE_AI_API_KEY;
+  checks.groq = !!process.env.GROQ_API_KEY;
+
+  // L1 critical secrets (whatsapp_platform_url is wired in L2 when Render is up)
+  const l1Required = [
+    'database',
+    'clerk_secret',
+    'clerk_publishable',
+    'webhook_hmac_secret',
+    'cron_secret',
+    'payfast_merchant_id',
+    'payfast_merchant_key',
+    'ai_api_key',
+  ];
 
   const failed = Object.entries(checks)
-    .filter(([, v]) => v === 'fail' || v === false)
+    .filter(([k, v]) => l1Required.includes(k) && (v === 'fail' || v === false))
     .map(([k]) => k);
 
   return NextResponse.json({
